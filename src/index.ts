@@ -1,29 +1,23 @@
 import express, { Application, NextFunction, Request, Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
-
+import configureMiddleware from './config/middleware';
 dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT ?? 3000;
 
 // Middleware
-app.use(express.json());
-app.use(helmet());
-app.use(cors());
-app.use(morgan('dev'));
+configureMiddleware(app)
 
 // Routes
 app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({ message: 'API is running' });
+  res.status(200).json({ message: 'Expense Tracker API is running' });
 });
 
 // Global error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error', message: err.message });
+  res.status(500).json({ error: err.message ?? 'Internal Server Error' });
 });
 
 // Start server
