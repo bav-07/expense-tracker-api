@@ -1,6 +1,12 @@
 import express, { Application, NextFunction, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import configureMiddleware from './config/middleware';
+import authRoutes from './routes/auth';
+import healthRoutes from './routes/health';
+import connectDB from './config/db';
+
+connectDB();
+
 dotenv.config();
 
 const app: Application = express();
@@ -10,9 +16,13 @@ const PORT = process.env.PORT ?? 3000;
 configureMiddleware(app)
 
 // Routes
-app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({ message: 'Expense Tracker API is running' });
-});
+app.use('/api', healthRoutes);
+app.use('/api/users', authRoutes);
+
+// Catch-all route for undefined requests
+app.use((req: Request, res: Response, _next: NextFunction) => {
+  res.status(404).json({ error: 'Route not Found' });
+})
 
 // Global error handler
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
