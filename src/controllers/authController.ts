@@ -2,6 +2,7 @@ import { Request, Response} from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import dotenv from 'dotenv';
+import { IGetUserAuthInfoRequest } from '../config/definitions';
 
 dotenv.config();
 
@@ -60,4 +61,14 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     res.status(500).json({ error: 'Failed to login'});
   }
+};
+
+// Get authenticated user profile
+export const getUserProfile = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const user = req.user;
+  if (!user) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
+  res.status(200).json(user);
 };
