@@ -1,6 +1,13 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-const incomeSchema = new mongoose.Schema(
+export interface IIncome extends Document {
+  userId: mongoose.Schema.Types.ObjectId;
+  source: string;
+  amount: number;
+  date: Date;
+}
+
+const incomeSchema: Schema<IIncome> = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     source: { type: String, required: true },

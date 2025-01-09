@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import configureMiddleware from './config/middleware';
 import authRoutes from './routes/auth';
 import healthRoutes from './routes/health';
+import incomeRoutes from './routes/income';
 import connectDB from './config/db';
 
 connectDB();
@@ -18,6 +19,7 @@ configureMiddleware(app)
 // Routes
 app.use('/api', healthRoutes);
 app.use('/api/users', authRoutes);
+app.use('/api/income', incomeRoutes);
 
 // Catch-all route for undefined requests
 app.use((req: Request, res: Response, _next: NextFunction) => {
