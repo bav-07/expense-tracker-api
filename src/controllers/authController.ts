@@ -72,3 +72,14 @@ export const getUserProfile = async (req: IGetUserAuthInfoRequest, res: Response
   }
   res.status(200).json(user);
 };
+
+// Update user preferences
+export const updatePreferences = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  try {
+    const { weekStart, monthStart } = req.body;
+    const user = await User.findByIdAndUpdate(req.user?.id, { weekStart, monthStart }, { new: true });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update preferences' });
+  }
+}

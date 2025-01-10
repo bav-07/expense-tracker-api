@@ -5,6 +5,7 @@ export interface IIncome extends Document {
   source: string;
   amount: number;
   date: Date;
+  frequency: string;
 }
 
 const incomeSchema: Schema<IIncome> = new mongoose.Schema(
@@ -13,6 +14,7 @@ const incomeSchema: Schema<IIncome> = new mongoose.Schema(
     source: { type: String, required: true },
     amount: { type: Number, required: true },
     date: { type: Date, required: true },
+    frequency: { type: String, enum: ['weekly', 'monthly'], required: true }
   },
   { timestamps: true }
 );

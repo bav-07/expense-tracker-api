@@ -6,6 +6,8 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
+  weekStart: string;
+  monthStart: string;
   comparePassword: (candidatePassword: string) => Promise<boolean>;
 }
 
@@ -15,6 +17,8 @@ const userSchema: Schema<IUser> = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    weekStart: { type: String, default: 'Monday' },
+    monthStart: { type: String, default: '1' },
   },
   { timestamps: true }
 );
