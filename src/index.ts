@@ -4,6 +4,7 @@ import configureMiddleware from './config/middleware';
 import authRoutes from './routes/auth';
 import healthRoutes from './routes/health';
 import incomeRoutes from './routes/income';
+import expenseRoutes from './routes/expense';
 import connectDB from './config/db';
 
 connectDB();
@@ -20,6 +21,7 @@ configureMiddleware(app)
 app.use('/api', healthRoutes);
 app.use('/api/users', authRoutes);
 app.use('/api/income', incomeRoutes);
+app.use('/api/expense', expenseRoutes);
 
 // Catch-all route for undefined requests
 app.use((req: Request, res: Response, _next: NextFunction) => {
