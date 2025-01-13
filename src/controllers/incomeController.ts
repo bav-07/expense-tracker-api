@@ -29,16 +29,10 @@ export const getIncomeById = async (req: IGetUserAuthInfoRequest, res: Response)
 
 export const getIncomeByPeriod = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   try {
-      const { period, startDate, endDate } = req.body;
+      const { startDate, endDate } = req.body;
 
-      // Validate query parameters
-      if (!period || !startDate || !endDate) {
-          res.status(400).json({ error: 'Missing required query parameters: period, startDate, endDate' });
-          return;
-      }
-
-      if (period !== 'week' && period !== 'month') {
-          res.status(400).json({ error: 'Invalid period value. Must be "week" or "month".' });
+      if ( !startDate || !endDate) {
+          res.status(400).json({ error: 'Missing required query parameters: startDate, endDate' });
           return;
       }
 
@@ -46,34 +40,16 @@ export const getIncomeByPeriod = async (req: IGetUserAuthInfoRequest, res: Respo
       const end = new Date(endDate as string);
 
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-          res.status(400).json({ error: 'Invalid date format. Use ISO strings.' });
+          res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
           return;
       }
 
-      console.log('Query Params:', { period, startDate, endDate });
+      const incomes = await Income.find({
+        userId: mongoose.Types.ObjectId.createFromHexString(req.user?.id?.toString()),
+        date: { $gte: start, $lte: end },
+      }).sort({ date: 'asc' });
 
-      const pipeline = [
-          {
-              $match: {
-                  userId: mongoose.Types.ObjectId.createFromHexString(req.user?.id?.toString()),
-                  date: { $gte: start, $lte: end },
-              },
-          },
-          {
-              $sort: { date: 1 as const },
-          },
-          {
-            $group: {
-              _id: period === 'week' ? { $week: '$date' } : { $month: '$date' },
-              totalIncome: { $sum: '$amount' },
-            },
-          },
-      ];
-
-      console.log('Aggregation Pipeline:', JSON.stringify(pipeline, null, 2));
-
-      const income = await Income.aggregate(pipeline);
-      res.status(200).json(income);
+      res.status(200).json(incomes);
   } catch (error) {
       console.error('Error during aggregation:', error);
       res.status(500).json({ error: 'Failed to retrieve income by period' });
