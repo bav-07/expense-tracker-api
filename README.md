@@ -74,5 +74,8 @@ The token acts as verification, such that the API will retrieve the data corresp
 - `PUT /api/income/:id` - Update a specific income
 - `DELETE /api/income/:id` - Delete a specific income
 
+### Savings
+- `GET /api/savings` - Get calculated savings within a given period (income - expenses)
+
 ## License
 This project is licensed under the MIT License.
