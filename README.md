@@ -33,14 +33,14 @@ Expense Tracker API: a RESTful service that allows users to securely manage thei
 Create a `.env` file in the root directory and add the following environment variables:
 ```
 PORT=3000
-MONGODB_URI=your_mongodb_uri
+MONGO_URI=your_mongodb_uri
 JWT_SECRET=your_jwt_secret
 ```
 
 ### Running the API
 Start the server:
 ```sh
-npm start
+npm run dev
 ```
 The API will be accessible at `http://localhost:3000`.
 
