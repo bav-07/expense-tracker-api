@@ -13,7 +13,6 @@ connectDB();
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT ?? 3000;
 
 // Middleware
 configureMiddleware(app)
@@ -36,7 +35,13 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: err.message ?? 'Internal Server Error' });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Export app for testing
+export default app;
+
+// Start server (only if not in testing mode)
+if (process.env.NODE_ENV !== 'test') {
+  const PORT = process.env.PORT ?? 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+}
