@@ -32,8 +32,10 @@ Expense Tracker API: a RESTful service that allows users to securely manage thei
 ### Configuration
 Create a `.env` file in the root directory and add the following environment variables:
 ```
+NODE_ENV=your_environment
 PORT=3000
 MONGO_URI=your_mongodb_uri
+TEST_MONGO_URI=your_test_mongodb_uri
 JWT_SECRET=your_jwt_secret
 ```
 
@@ -77,5 +79,12 @@ The token acts as verification, such that the API will retrieve the data corresp
 ### Savings
 - `GET /api/savings` - Get calculated savings within a given period (income - expenses)
 
+## Testing
+The command to run tests will generate a coverage report. To run the tests, use the following command:
+```sh
+npm test
+```
+
+The coverage report will be available in the `coverage` directory.
 ## License
 This project is licensed under the MIT License.
