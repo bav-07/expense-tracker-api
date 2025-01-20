@@ -98,4 +98,49 @@ describe('Auth Controller Tests', () => {
     expect(res.status).toBe(401); // Unauthorized
     expect(res.body).toHaveProperty('error', 'Not authorized to access this route');
   });
+
+  it('should update user preferences', async () => {
+    const preferences = {
+      weekStart: 'Monday',
+      monthStart: '1',
+    };
+
+    const res = await request(app)
+      .put('/api/users/preferences')
+      .set('Authorization', `Bearer ${token}`)
+      .send(preferences);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('weekStart', preferences.weekStart);
+    expect(res.body).toHaveProperty('monthStart', preferences.monthStart);
+  });
+
+  it('should not update preferences without a token', async () => {
+    const preferences = {
+      weekStart: 'Monday',
+      monthStart: 1,
+    };
+
+    const res = await request(app)
+      .put('/api/users/preferences')
+      .send(preferences);
+
+    expect(res.status).toBe(401); // Unauthorized
+    expect(res.body).toHaveProperty('error', 'Not authorized to access this route');
+  });
+
+  it('should not update preferences with an invalid token', async () => {
+    const preferences = {
+      weekStart: 'Monday',
+      monthStart: '1',
+    };
+
+    const res = await request(app)
+      .put('/api/users/preferences')
+      .set('Authorization', 'Bearer invalidToken')
+      .send(preferences);
+
+    expect(res.status).toBe(401); // Unauthorized
+    expect(res.body).toHaveProperty('error', 'Invalid token');
+  });
 });
