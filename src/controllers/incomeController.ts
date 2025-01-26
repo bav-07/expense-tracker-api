@@ -56,53 +56,15 @@ export const getIncomeByPeriod = async (req: IGetUserAuthInfoRequest, res: Respo
   }
 };
 
-// export const calculateSavings = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
-//   try {
-//     const { startDate, endDate } = req.query;
-//     const income = await Income.aggregate([
-//       {
-//         $match: {
-//           userId: req.user?.id,
-//           date: {
-//             $gte: new Date(startDate as string),
-//             $lte: new Date(endDate as string),
-//           }
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           totalIncome: { $sum: '$amount' }
-//         }
-//       }
-//     ])
-//     const expenses = await Expense.aggregate([
-//       {
-//         $match: {
-//           userId: req.user?.id,
-//           date: {
-//             $gte: new Date(startDate as string),
-//             $lte: new Date(endDate as string),
-//           }
-//         }
-//       },
-//       {
-//         $group: {
-//           _id: null,
-//           totalExpenses: { $sum: '$amount' }
-//         }
-//       }
-//     ])
-//   } catch (error) {
-//     res.status(500).json({ error: 'Failed to calculate savings'});
-//   }
-// };
-
 export const createIncome = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   try {
     const { source, amount, date, frequency } = req.body;
-    if (!source || !amount || !date || !frequency) {
-      res.status(400).json({ error: 'All fields are required'});
+    if (!source || !amount || !date) {
+      res.status(400).json({ error: 'Source, amount and date are required'});
+      return;
+    }
+    if (frequency && !['monthly', 'weekly'].some(f => f === frequency)) {
+      res.status(400).json({ error: 'Invalid frequency. Use either "monthly" or "weekly"'});
       return;
     }
     const income = new Income({ userId: req.user?.id, source, amount, date, frequency });

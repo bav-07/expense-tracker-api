@@ -4,20 +4,18 @@ import request from "supertest";
 import app from "../src/index";
 
 describe('Expense Controller Tests', () => {
+  const testUser = {
+    name: 'Test User',
+    email: 'test@example.com',
+    password: 'password123',
+  };
+
   let token: string;
   let testConnection: Connection;
-  let testExpense: IExpense;
 
   beforeAll(async () => {
     testConnection = mongoose.createConnection(process.env.TEST_MONGO_URI as string);
     await mongoose.connection.db?.dropDatabase();
-
-    const testUser = {
-      name: 'Test User',
-      email: 'test@example.com',
-      password: 'password123',
-    };
-
     const res = await request(app)
       .post('/api/users/register')
       .send(testUser);
