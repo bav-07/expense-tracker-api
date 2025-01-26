@@ -16,16 +16,12 @@ describe('Auth Controller Tests', () => {
   beforeAll(async () => {
     // Connect to the test database
     testConnection = mongoose.createConnection(process.env.TEST_MONGO_URI as string);
-    const client = mongoose.connection.getClient();
-    const db = client.db();
-    await db.dropDatabase();
+    await mongoose.connection.db?.dropDatabase();
   });
 
   afterAll(async () => {
     // Drop the database and close the connection after tests
-    const client = mongoose.connection.getClient();
-    const db = client.db();
-    await db.dropDatabase();
+    await mongoose.connection.db?.dropDatabase();
     await testConnection.close();
     await mongoose.connection.close();
   });
@@ -77,6 +73,7 @@ describe('Auth Controller Tests', () => {
     const res = await request(app)
       .get('/api/users/profile')
       .set('Authorization', `Bearer ${token}`);
+    console.log('res',res.body);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('name', testUser.name);
@@ -109,6 +106,7 @@ describe('Auth Controller Tests', () => {
       .put('/api/users/preferences')
       .set('Authorization', `Bearer ${token}`)
       .send(preferences);
+    console.log('res',res.body);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('weekStart', preferences.weekStart);
