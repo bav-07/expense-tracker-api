@@ -84,6 +84,7 @@ The command to run tests will generate a coverage report. To run the tests, use 
 ```sh
 npm test
 ```
+The script, as you'll see in `package.json`, runs `jest` with the flag `--runInBand`, which runs the test files sequentially, ensuring one completes before the next begins. This is to avoid race conditions, as the tests are modifying a shared test database.
 
 The coverage report will be available in the `coverage` directory.
 ## License
