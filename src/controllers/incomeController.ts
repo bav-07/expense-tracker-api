@@ -102,7 +102,6 @@ export const createIncome = async (req: IGetUserAuthInfoRequest, res: Response):
   try {
     const { source, amount, date, frequency } = req.body;
     if (!source || !amount || !date || !frequency) {
-      console.log(source, amount, date, frequency)
       res.status(400).json({ error: 'All fields are required'});
       return;
     }

@@ -73,7 +73,6 @@ describe('Auth Controller Tests', () => {
     const res = await request(app)
       .get('/api/users/profile')
       .set('Authorization', `Bearer ${token}`);
-    console.log('res',res.body);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('name', testUser.name);
@@ -106,7 +105,6 @@ describe('Auth Controller Tests', () => {
       .put('/api/users/preferences')
       .set('Authorization', `Bearer ${token}`)
       .send(preferences);
-    console.log('res',res.body);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('weekStart', preferences.weekStart);

@@ -39,7 +39,6 @@ describe('Expense Controller Tests', () => {
         amount: 100,
         date: '2022-01-01',
       });
-    console.log('res',res.body);
     expect(res.status).toBe(201);
   });
 })

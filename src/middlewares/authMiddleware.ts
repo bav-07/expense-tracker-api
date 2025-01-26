@@ -26,7 +26,6 @@ export const protect = async (req: IGetUserAuthInfoRequest, res: Response, next:
       return;
     }
     req.user = user;
-    console.log('Middleware req.user:', req.user);
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });

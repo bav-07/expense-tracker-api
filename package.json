@@ -8,7 +8,7 @@
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
     "build": "tsc",
     "lint": "npx eslint . --ignore-pattern 'dist/**'",
-    "test": "jest --coverage"
+    "test": "jest --coverage --runInBand"
   },
   "repository": {
     "type": "git",
