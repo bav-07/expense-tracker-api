@@ -8,7 +8,6 @@ export const getExpenses = async (req: IGetUserAuthInfoRequest, res: Response): 
     const expenses = await Expense.find({ userId: req.user?.id }).sort({ date: 'asc' });
     res.status(200).json({ expenses });
   } catch (error) {
-    console.error('Error fetching expenses: ', error);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -22,7 +21,6 @@ export const getExpenseById = async(req: IGetUserAuthInfoRequest, res: Response)
     }
     res.status(200).json({ expense });
   } catch (error) {
-    console.error('Error fetching expense by ID: ', error);
     res.status(500).json({ error: "Failed to retrieve expense" });
   }
 }
@@ -51,7 +49,6 @@ export const getExpensesByPeriod = async (req: IGetUserAuthInfoRequest, res: Res
 
       res.status(200).json(expenses);
   } catch (error) {
-      console.error('Error during aggregation:', error);
       res.status(500).json({ error: 'Failed to retrieve expenses by period' });
   }
 };
@@ -67,7 +64,6 @@ export const createExpense = async (req: IGetUserAuthInfoRequest, res: Response)
     await expense.save();
     res.status(201).json({ expense });
   } catch (error) {
-    console.error('Error creating expense: ', error);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -82,7 +78,6 @@ export const updateExpense = async (req: IGetUserAuthInfoRequest, res: Response)
     }
     res.status(200).json({ expense });
   } catch (error) {
-    console.error('Error updating expense: ', error);
     res.status(500).json({ error: "Failed to update expense" });
   }
 }
@@ -96,7 +91,6 @@ export const deleteExpense = async (req: IGetUserAuthInfoRequest, res: Response)
     }
     res.status(200).json({ expense });
   } catch (error) {
-    console.error('Error deleting expense: ', error);
     res.status(500).json({ error: "Failed to delete expense" });
   }
 }

@@ -49,7 +49,6 @@ export const getIncomeByPeriod = async (req: IGetUserAuthInfoRequest, res: Respo
 
       res.status(200).json(incomes);
   } catch (error) {
-      console.error('Error during aggregation:', error);
       res.status(500).json({ error: 'Failed to retrieve income by period' });
   }
 };
