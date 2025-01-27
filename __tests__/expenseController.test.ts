@@ -38,6 +38,38 @@ describe('Expense Controller Tests', () => {
       });
     expect(res.status).toBe(201);
   });
+
+  it('should not create an expense if no category, amount or date is provided', async () => {
+    const resNoCategory = await request(app)
+      .post('/api/expense')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        amount: 100,
+        date: '2022-01-01',
+      });
+    expect(resNoCategory.status).toBe(400);
+    expect(resNoCategory.body).toHaveProperty('error', 'All fields are required');
+
+    const resNoAmount = await request(app)
+      .post('/api/expense')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        category: 'Bill',
+        date: '2022-01-01',
+      });
+    expect(resNoAmount.status).toBe(400);
+    expect(resNoAmount.body).toHaveProperty('error', 'All fields are required');
+
+    const resNoDate = await request(app)
+      .post('/api/expense')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        category: 'Bill',
+        amount: 100,
+      });
+    expect(resNoDate.status).toBe(400);
+    expect(resNoDate.body).toHaveProperty('error', 'All fields are required');
+  });
   
   it('should get all expenses', async () => {
     const addedExpenseRes = await request(app)
@@ -75,6 +107,22 @@ describe('Expense Controller Tests', () => {
     expect(res.body.expense).toBeDefined();
   });
 
+  it('should not get an expense if no expense found for provided ID', async () => {
+    const res = await request(app)
+      .get(`/api/expense/${new mongoose.Types.ObjectId()}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'Expense not found');
+  });
+
+  it('should not get an expense if provided ID is not a valid ID', async () => {
+    const res = await request(app)
+      .get(`/api/expense/randomId`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to retrieve expense');
+  });
+
   it('should get expenses by period', async () => {
     const res = await request(app)
       .get('/api/expense/period')
@@ -83,10 +131,31 @@ describe('Expense Controller Tests', () => {
         startDate: '2022-01-01',
         endDate: '2022-12-31',
       });
-    console.log(res.body);
     expect(res.status).toBe(200);
     expect(res.body).toBeInstanceOf(Array);
     expect(res.body.length).toBe(3);
+  });
+
+  it('should not return expenses by period if start and end date not specified', async () => {
+    const res = await request(app)
+      .get('/api/expense/period')
+      .set('Authorization', `Bearer ${token}`)
+      .send();
+    expect(res.status).toBe(400);
+    expect(res.body).toBeDefined();
+    expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
+  });
+
+  it('should not get expenses by period if invalid start or end date is provided', async () => {
+    const resInvalidDate = await request(app)
+      .get('/api/expense/period')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        startDate: '2022-01-01',
+        endDate: '2022-31-12',
+      });
+    expect(resInvalidDate.status).toBe(400);
+    expect(resInvalidDate.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
   });
 
   it('should update an expense', async () => {
@@ -112,6 +181,32 @@ describe('Expense Controller Tests', () => {
     expect(res.body.expense.amount).toBe(25);
   });
 
+  it('should not update an expense if expense not found', async () => {
+    const res = await request(app)
+      .put(`/api/expense/${new mongoose.Types.ObjectId()}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        category: 'Transport',
+        amount: 20,
+        date: '2022-01-03',
+      });
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'Expense not found');
+  });
+
+  it('should not update an expense if provided ID is not a valid ID', async () => {
+    const res = await request(app)
+      .put(`/api/expense/randomId`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        category: 'Transport',
+        amount: 25,
+        date: '2022-01-03',
+      });
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to update expense');
+  });
+
   it('should delete an expense', async () => {
     const newExpense = await request(app)
       .post('/api/expense')
@@ -127,5 +222,21 @@ describe('Expense Controller Tests', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.expense._id).toBe(newExpense.body.expense._id);
+  });
+
+  it('should not delete an expense if expense not found', async () => {
+    const res = await request(app)
+      .delete(`/api/expense/${new mongoose.Types.ObjectId()}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+    expect(res.body).toHaveProperty('error', 'Expense not found');
+  });
+
+  it('should not delete an expense if provided ID is not a valid ID', async () => {
+    const res = await request(app)
+    .delete(`/api/expense/randomId`)
+    .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to delete expense');
   });
 })

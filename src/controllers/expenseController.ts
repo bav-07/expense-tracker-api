@@ -16,7 +16,7 @@ export const getExpenseById = async(req: IGetUserAuthInfoRequest, res: Response)
   try {
     const expense = await Expense.findOne({ _id: req.params.id, userId: req.user?.id });
     if (!expense) {
-      res.status(404).json({ message: "Expense not found" });
+      res.status(404).json({ error: "Expense not found" });
       return;
     }
     res.status(200).json({ expense });
@@ -29,7 +29,7 @@ export const getExpensesByPeriod = async (req: IGetUserAuthInfoRequest, res: Res
   try {
       const { startDate, endDate } = req.body;
 
-      if ( !startDate || !endDate) {
+      if (!startDate || !endDate) {
           res.status(400).json({ error: 'Missing required query parameters: startDate, endDate' });
           return;
       }
@@ -57,7 +57,7 @@ export const createExpense = async (req: IGetUserAuthInfoRequest, res: Response)
   try {
     const { category, amount, date } = req.body;
     if (!category || !amount || !date) {
-      res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ error: "All fields are required" });
       return;
     }
     const expense = new Expense({ userId: req.user?.id, category, amount, date });
@@ -73,7 +73,7 @@ export const updateExpense = async (req: IGetUserAuthInfoRequest, res: Response)
     const { category, amount, date } = req.body;
     const expense = await Expense.findOneAndUpdate({ _id: req.params.id, userId: req.user?.id }, { category, amount, date }, { new: true });
     if (!expense) {
-      res.status(404).json({ message: "Expense not found" });
+      res.status(404).json({ error: "Expense not found" });
       return;
     }
     res.status(200).json({ expense });
@@ -86,7 +86,7 @@ export const deleteExpense = async (req: IGetUserAuthInfoRequest, res: Response)
   try {
     const expense = await Expense.findOneAndDelete({ _id: req.params.id, userId: req.user?.id });
     if (!expense) {
-      res.status(404).json({ message: "Expense not found" });
+      res.status(404).json({ error: "Expense not found" });
       return;
     }
     res.status(200).json({ expense });

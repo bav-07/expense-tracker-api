@@ -213,25 +213,25 @@ describe('Income Controller Tests', () => {
   });
 
   it('should not return incomes in period if start and end date not specified', async () => {
-    const resEvenShorterPeriod = await request(app)
+    const res = await request(app)
       .get('/api/income/period')
       .set('Authorization', `Bearer ${token}`)
-    expect(resEvenShorterPeriod.status).toBe(400);
-    expect(resEvenShorterPeriod.body).toBeDefined();
-    expect(resEvenShorterPeriod.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
+    expect(res.status).toBe(400);
+    expect(res.body).toBeDefined();
+    expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
   });
 
   it('should not return incomes in period if start and end date are in invalid format', async () => {
-    const resEvenShorterPeriod = await request(app)
+    const res = await request(app)
       .get('/api/income/period')
       .set('Authorization', `Bearer ${token}`)
       .send({
         startDate: 'January 1st, 2022',
         endDate: 'January 31st, 2022'
       });
-    expect(resEvenShorterPeriod.status).toBe(400);
-    expect(resEvenShorterPeriod.body).toBeDefined();
-    expect(resEvenShorterPeriod.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
+    expect(res.status).toBe(400);
+    expect(res.body).toBeDefined();
+    expect(res.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
   });
 
   it('should update an income', async () => {
@@ -321,6 +321,21 @@ describe('Income Controller Tests', () => {
     expect(res.body).toHaveProperty('error', 'Income not found');
   });
 
+  it('should not update an income if provided ID is not a valid ID', async () => {
+    const res = await request(app)
+      .put(`/api/income/randomId`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        source: 'Updated Salary',
+        amount: 1500,
+        date: '2022-04-01',
+        frequency: 'weekly'
+      });
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to update income');
+  });
+
+
   it('should delete an income', async () => {
     const newIncomeResponse = await request(app)
       .post('/api/income')
@@ -346,5 +361,13 @@ describe('Income Controller Tests', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(404);
     expect(res.body).toHaveProperty('error', 'Income not found');
+  });
+
+  it('should not delete an income if provided ID is not a valid ID', async () => {
+    const res = await request(app)
+      .delete(`/api/income/randomId`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty('error', 'Failed to delete income');
   });
 })
