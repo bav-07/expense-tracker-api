@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { IGetUserAuthInfoRequest } from "../config/definitions";
 import Expense from "../models/expenseModel";
 import mongoose from "mongoose";

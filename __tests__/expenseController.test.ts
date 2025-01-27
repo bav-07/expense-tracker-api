@@ -1,5 +1,4 @@
 import mongoose, { Connection } from "mongoose";
-import { IExpense } from "../src/models/expenseModel";
 import request from "supertest";
 import app from "../src/index";
 

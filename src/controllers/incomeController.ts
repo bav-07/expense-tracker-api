@@ -1,8 +1,6 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import Income from "../models/incomeModel";
 import { IGetUserAuthInfoRequest } from "../config/definitions";
-import User from "../models/userModel";
-import { contentSecurityPolicy } from "helmet";
 import mongoose from "mongoose";
 
 export const getIncomes = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {

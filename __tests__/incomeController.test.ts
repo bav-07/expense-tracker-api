@@ -1,7 +1,6 @@
 import mongoose, { Connection } from "mongoose";
 import request from "supertest";
 import app from "../src/index";
-import exp from "constants";
 
 describe('Income Controller Tests', () => {
   const testUser = {
