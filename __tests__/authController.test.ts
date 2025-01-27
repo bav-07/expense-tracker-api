@@ -33,7 +33,6 @@ describe('Auth Controller Tests', () => {
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('token'); // Ensure token is returned
     token = res.body.token; // Save the token for future tests
-    userId = res.body.user.id;
   });
 
   it('should require all fields to register', async () => {
