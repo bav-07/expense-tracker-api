@@ -33,6 +33,36 @@ describe('Auth Controller Tests', () => {
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('token'); // Ensure token is returned
     token = res.body.token; // Save the token for future tests
+    userId = res.body.user.id;
+  });
+
+  it('should require all fields to register', async () => {
+    const resNoPassword = await request(app)
+      .post('/api/users/register')
+      .send({
+        name: 'Test User',
+        email: 'test@example.com',
+      });
+    expect(resNoPassword.status).toBe(400); 
+    expect(resNoPassword.body).toHaveProperty('error', 'All fields are required');
+
+    const resNoEmail = await request(app)
+      .post('/api/users/register')
+      .send({
+        name: 'Test User',
+        password: 'password123',
+      });
+    expect(resNoEmail.status).toBe(400); 
+    expect(resNoEmail.body).toHaveProperty('error', 'All fields are required');
+
+    const resNoName = await request(app)
+      .post('/api/users/register')
+      .send({
+        email: 'test@example.com',
+        password: 'password123',
+      });
+    expect(resNoName.status).toBe(400); 
+    expect(resNoName.body).toHaveProperty('error', 'All fields are required');
   });
 
   it('should prevent duplicate registration', async () => {
@@ -57,6 +87,24 @@ describe('Auth Controller Tests', () => {
     token = res.body.token; // Update the token for profile tests
   });
 
+  it('should require all fields to login', async () => {
+    const resNoPassword = await request(app)
+      .post('/api/users/login')
+      .send({
+        email: testUser.email,
+      });
+    expect(resNoPassword.status).toBe(400); // Unauthorized
+    expect(resNoPassword.body).toHaveProperty('error', 'All fields are required');
+
+    const resNoEmail = await request(app)
+      .post('/api/users/login')
+      .send({
+        password: testUser.password,
+      });
+    expect(resNoEmail.status).toBe(400); // Unauthorized
+    expect(resNoEmail.body).toHaveProperty('error', 'All fields are required');
+  });
+  
   it('should not log in with invalid credentials', async () => {
     const res = await request(app)
       .post('/api/users/login')
