@@ -9,7 +9,7 @@ export const calculateSavings = async (req: IGetUserAuthInfoRequest, res: Respon
   try {
     const { startDate, endDate } = req.body;
 
-    if ( !startDate || !endDate) {
+    if (!startDate || !endDate) {
       res.status(400).json({ error: 'Missing required query parameters: startDate, endDate' });
       return;
     }
