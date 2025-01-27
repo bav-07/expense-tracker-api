@@ -12,7 +12,6 @@ describe('Savings Controller', () => {
   };
 
   let token: string;
-  let userId: string;
   let testConnection: Connection;
 
   beforeAll(async () => {
