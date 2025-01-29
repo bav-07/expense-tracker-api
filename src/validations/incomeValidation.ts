@@ -18,10 +18,9 @@ const incomeSchema = Joi.object({
     'date.iso': messages['date.iso'],
     'any.required': messages['any.required']
   }),
-  frequency: Joi.string().valid('weekly', 'monthly').required().messages({
+  frequency: Joi.string().valid('weekly', 'monthly').optional().messages({
     'string.base': messages['string.base'],
     'any.only': messages['any.onlyfrequency'],
-    'any.required': messages['any.required']
   }),
 });
 

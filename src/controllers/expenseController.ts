@@ -27,7 +27,7 @@ export const getExpenseById = async(req: IGetUserAuthInfoRequest, res: Response)
 
 export const getExpensesByPeriod = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   try {
-      const { startDate, endDate } = req.body;
+      const { startDate, endDate } = req.query;
 
       if (!startDate || !endDate) {
           res.status(400).json({ error: 'Missing required query parameters: startDate, endDate' });

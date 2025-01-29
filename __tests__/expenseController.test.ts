@@ -48,7 +48,7 @@ describe('Expense Controller Tests', () => {
         date: '2022-01-01',
       });
     expect(resNoCategory.status).toBe(400);
-    expect(resNoCategory.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoCategory.body).toHaveProperty('error', ['"category" field is required']);
 
     const resNoAmount = await request(app)
       .post('/api/expense')
@@ -58,7 +58,7 @@ describe('Expense Controller Tests', () => {
         date: '2022-01-01',
       });
     expect(resNoAmount.status).toBe(400);
-    expect(resNoAmount.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoAmount.body).toHaveProperty('error', ['"amount" field is required']);
 
     const resNoDate = await request(app)
       .post('/api/expense')
@@ -68,7 +68,7 @@ describe('Expense Controller Tests', () => {
         amount: 100,
       });
     expect(resNoDate.status).toBe(400);
-    expect(resNoDate.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoDate.body).toHaveProperty('error', ['"date" field is required']);
   });
   
   it('should get all expenses', async () => {
@@ -125,12 +125,8 @@ describe('Expense Controller Tests', () => {
 
   it('should get expenses by period', async () => {
     const res = await request(app)
-      .get('/api/expense/period')
+      .get('/api/expense/period?startDate=2022-01-01&endDate=2022-12-31')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2022-01-01',
-        endDate: '2022-12-31',
-      });
     expect(res.status).toBe(200);
     expect(res.body).toBeInstanceOf(Array);
     expect(res.body.length).toBe(3);
@@ -140,7 +136,6 @@ describe('Expense Controller Tests', () => {
     const res = await request(app)
       .get('/api/expense/period')
       .set('Authorization', `Bearer ${token}`)
-      .send();
     expect(res.status).toBe(400);
     expect(res.body).toBeDefined();
     expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
@@ -148,7 +143,7 @@ describe('Expense Controller Tests', () => {
 
   it('should not get expenses by period if invalid start or end date is provided', async () => {
     const resInvalidDate = await request(app)
-      .get('/api/expense/period')
+      .get('/api/expense/period?startDate=2022-01-01&endDate=2022-31-12')
       .set('Authorization', `Bearer ${token}`)
       .send({
         startDate: '2022-01-01',

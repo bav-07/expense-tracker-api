@@ -62,7 +62,7 @@ describe('Income Controller Tests', () => {
         amount: 1000
       });
     expect(resNoDate.status).toBe(400);
-    expect(resNoDate.body).toHaveProperty('error', 'Source, amount and date are required');
+    expect(resNoDate.body).toHaveProperty('error', ["\"date\" field is required"]);
 
     const resNoAmount = await request(app)
       .post('/api/income')
@@ -72,7 +72,7 @@ describe('Income Controller Tests', () => {
         date: '2022-02-01'
       });
     expect(resNoAmount.status).toBe(400);
-    expect(resNoAmount.body).toHaveProperty('error', 'Source, amount and date are required');
+    expect(resNoAmount.body).toHaveProperty('error', ["\"amount\" field is required"]);
 
     const resNoSource = await request(app)
       .post('/api/income')
@@ -82,7 +82,7 @@ describe('Income Controller Tests', () => {
         date: '2022-02-01'
       });
     expect(resNoSource.status).toBe(400);
-    expect(resNoSource.body).toHaveProperty('error', 'Source, amount and date are required');
+    expect(resNoSource.body).toHaveProperty('error', ["\"source\" field is required"]);
   });
 
   it('should not create a new income if specified frequency is not weekly/monthly', async () => {
@@ -96,7 +96,7 @@ describe('Income Controller Tests', () => {
         frequency: 'yearly'
       });
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('error', 'Invalid frequency. Use either "monthly" or "weekly"');
+    expect(res.body).toHaveProperty('error', ["Frequency should be either weekly or monthly"]);
   });
   
   it('should not create a new income if token is invalid', async () => {
@@ -169,44 +169,28 @@ describe('Income Controller Tests', () => {
 
   it('should get incomes by period', async () => {
     const res = await request(app)
-      .get('/api/income/period')
+      .get('/api/income/period?startDate=2022-01-01&endDate=2022-03-01')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2022-01-01',
-        endDate: '2022-03-01'
-      });
     expect(res.status).toBe(200);
     expect(res.body.length).toBe(3);
 
     const resShorterPeriod = await request(app)
-      .get('/api/income/period')
+      .get('/api/income/period?startDate=2022-01-01&endDate=2022-02-01')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2022-01-01',
-        endDate: '2022-02-01'
-      });
     expect(resShorterPeriod.status).toBe(200);
     expect(resShorterPeriod.body.length).toBe(2);
 
     const resEvenShorterPeriod = await request(app)
-      .get('/api/income/period')
+      .get('/api/income/period?startDate=2022-01-01&endDate=2022-01-31')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2022-01-01',
-        endDate: '2022-01-31'
-      });
     expect(resEvenShorterPeriod.status).toBe(200);
     expect(resEvenShorterPeriod.body.length).toBe(1);
   });
 
   it('should return empty array if no incomes in specified period', async () => {
     const resEvenShorterPeriod = await request(app)
-      .get('/api/income/period')
+      .get('/api/income/period?startDate=2021-12-01&endDate=2021-12-31')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2021-12-01',
-        endDate: '2021-12-31'
-      });
     expect(resEvenShorterPeriod.status).toBe(200);
     expect(resEvenShorterPeriod.body).toBeDefined();
     expect(resEvenShorterPeriod.body.length).toBe(0);
@@ -223,7 +207,7 @@ describe('Income Controller Tests', () => {
 
   it('should not return incomes in period if start and end date are in invalid format', async () => {
     const res = await request(app)
-      .get('/api/income/period')
+      .get('/api/income/period?startDate=January 1st, 2022&endDate=January 31st, 2022')
       .set('Authorization', `Bearer ${token}`)
       .send({
         startDate: 'January 1st, 2022',
