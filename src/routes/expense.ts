@@ -10,16 +10,19 @@ import {
 import { protect } from '../middlewares/authMiddleware';
 import expenseSchema from '../validations/expenseValidation';
 import validate from '../middlewares/validateMiddleware';
+import { validateObjectId } from '../validations/validateParams';
+import { dateRangeSchema } from '../validations/validationSchemas';
+import { validateQuery } from '../validations/validateQuery';
 
 const router = Router();
 
 router.use(protect);
 
 router.get('/', getExpenses);
-router.get('/period', getExpensesByPeriod);
-router.get('/:id', getExpenseById);
+router.get('/period', validateQuery(dateRangeSchema), getExpensesByPeriod);
+router.get('/:id', validateObjectId, getExpenseById);
 router.post('/', validate(expenseSchema), createExpense);
-router.put('/:id', updateExpense);
-router.delete('/:id', deleteExpense);
+router.put('/:id', validateObjectId, updateExpense);
+router.delete('/:id', validateObjectId, deleteExpense);
 
 export default router;

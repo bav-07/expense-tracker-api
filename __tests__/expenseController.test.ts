@@ -119,8 +119,8 @@ describe('Expense Controller Tests', () => {
     const res = await request(app)
       .get(`/api/expense/randomId`)
       .set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to retrieve expense');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 
   it('should get expenses by period', async () => {
@@ -198,8 +198,8 @@ describe('Expense Controller Tests', () => {
         amount: 25,
         date: '2022-01-03',
       });
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to update expense');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 
   it('should delete an expense', async () => {
@@ -231,7 +231,7 @@ describe('Expense Controller Tests', () => {
     const res = await request(app)
     .delete(`/api/expense/randomId`)
     .set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to delete expense');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 })

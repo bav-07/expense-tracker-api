@@ -163,8 +163,8 @@ describe('Income Controller Tests', () => {
     const res = await request(app)
       .get(`/api/income/randomId`)
       .set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to retrieve income');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 
   it('should get incomes by period', async () => {
@@ -315,8 +315,8 @@ describe('Income Controller Tests', () => {
         date: '2022-04-01',
         frequency: 'weekly'
       });
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to update income');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 
 
@@ -351,7 +351,7 @@ describe('Income Controller Tests', () => {
     const res = await request(app)
       .delete(`/api/income/randomId`)
       .set('Authorization', `Bearer ${token}`);
-    expect(res.status).toBe(500);
-    expect(res.body).toHaveProperty('error', 'Failed to delete income');
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error', 'Invalid ID format');
   });
 })

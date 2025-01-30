@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 
 export const calculateSavings = async (req: IGetUserAuthInfoRequest, res: Response) => {
   try {
-    const { startDate, endDate } = req.body;
+    const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
       res.status(400).json({ error: 'Missing required query parameters: startDate, endDate' });
