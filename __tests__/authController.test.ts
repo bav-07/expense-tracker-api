@@ -43,7 +43,7 @@ describe('Auth Controller Tests', () => {
         email: 'test@example.com',
       });
     expect(resNoPassword.status).toBe(400); 
-    expect(resNoPassword.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoPassword.body).toHaveProperty('error', ["\"password\" field is required"]);
 
     const resNoEmail = await request(app)
       .post('/api/users/register')
@@ -52,7 +52,7 @@ describe('Auth Controller Tests', () => {
         password: 'password123',
       });
     expect(resNoEmail.status).toBe(400); 
-    expect(resNoEmail.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoEmail.body).toHaveProperty('error', ["\"email\" field is required"]);
 
     const resNoName = await request(app)
       .post('/api/users/register')
@@ -61,7 +61,7 @@ describe('Auth Controller Tests', () => {
         password: 'password123',
       });
     expect(resNoName.status).toBe(400); 
-    expect(resNoName.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoName.body).toHaveProperty('error', ["\"name\" field is required"]);
   });
 
   it('should prevent duplicate registration', async () => {
@@ -93,7 +93,7 @@ describe('Auth Controller Tests', () => {
         email: testUser.email,
       });
     expect(resNoPassword.status).toBe(400); // Unauthorized
-    expect(resNoPassword.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoPassword.body).toHaveProperty('error', ["\"password\" field is required"]);
 
     const resNoEmail = await request(app)
       .post('/api/users/login')
@@ -101,7 +101,7 @@ describe('Auth Controller Tests', () => {
         password: testUser.password,
       });
     expect(resNoEmail.status).toBe(400); // Unauthorized
-    expect(resNoEmail.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoEmail.body).toHaveProperty('error', ["\"email\" field is required"]);
   });
   
   it('should not log in with invalid credentials', async () => {
