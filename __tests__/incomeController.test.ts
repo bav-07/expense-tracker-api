@@ -202,7 +202,7 @@ describe('Income Controller Tests', () => {
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(400);
     expect(res.body).toBeDefined();
-    expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
+    expect(res.body).toHaveProperty('error', ["\"startDate\" field is required", "\"endDate\" field is required"]);
   });
 
   it('should not return incomes in period if start and end date are in invalid format', async () => {
@@ -215,7 +215,7 @@ describe('Income Controller Tests', () => {
       });
     expect(res.status).toBe(400);
     expect(res.body).toBeDefined();
-    expect(res.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
+    expect(res.body).toHaveProperty('error', ["\"startDate\" must be in ISO 8601 date format", "\"endDate\" must be in ISO 8601 date format"]);
   });
 
   it('should update an income', async () => {

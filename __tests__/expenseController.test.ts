@@ -138,19 +138,15 @@ describe('Expense Controller Tests', () => {
       .set('Authorization', `Bearer ${token}`)
     expect(res.status).toBe(400);
     expect(res.body).toBeDefined();
-    expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
+    expect(res.body).toHaveProperty('error',  ["\"startDate\" field is required", "\"endDate\" field is required"]);
   });
 
   it('should not get expenses by period if invalid start or end date is provided', async () => {
     const resInvalidDate = await request(app)
-      .get('/api/expense/period?startDate=2022-01-01&endDate=2022-31-12')
+      .get('/api/expense/period?startDate=2022-01-34&endDate=2022-31-12')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2022-01-01',
-        endDate: '2022-31-12',
-      });
     expect(resInvalidDate.status).toBe(400);
-    expect(resInvalidDate.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
+    expect(resInvalidDate.body).toHaveProperty('error', ["\"startDate\" must be in ISO 8601 date format", "\"endDate\" must be in ISO 8601 date format"]);
   });
 
   it('should update an expense', async () => {

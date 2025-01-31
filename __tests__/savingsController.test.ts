@@ -48,12 +48,8 @@ describe('Savings Controller', () => {
 
   it('should calculate savings', async () => {
     const res = await request(app)
-      .get('/api/savings')
+      .get('/api/savings?startDate=2021-12-01&endDate=2022-01-31')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2021-12-01',
-        endDate: '2022-01-31',
-      });
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('totalIncome', 1000);
@@ -65,22 +61,17 @@ describe('Savings Controller', () => {
     const res = await request(app)
       .get('/api/savings')
       .set('Authorization', `Bearer ${token}`)
-      .send();
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('error', 'Missing required query parameters: startDate, endDate');
+    expect(res.body).toHaveProperty('error', ["\"startDate\" field is required", "\"endDate\" field is required"]);
   });
 
   it('should not calculate savings if provided dates are in invalid format', async () => {
     const res = await request(app)
-      .get('/api/savings')
+      .get('/api/savings?startDate=2021-01-34&endDate=2022-31-12')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        startDate: '2021-01-01',
-        endDate: '2022-31-12',
-      });
 
     expect(res.status).toBe(400);
-    expect(res.body).toHaveProperty('error', 'Invalid date format. Use YYYY-MM-DD');
+    expect(res.body).toHaveProperty('error', ["\"startDate\" must be in ISO 8601 date format", "\"endDate\" must be in ISO 8601 date format"]);
   });
 });
