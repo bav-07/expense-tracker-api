@@ -13,7 +13,7 @@ describe('Expense Controller Tests', () => {
   let testConnection: Connection;
 
   beforeAll(async () => {
-    testConnection = mongoose.createConnection(process.env.TEST_MONGO_URI as string);
+    testConnection = mongoose.createConnection(process.env.MONGO_URI as string);
     await mongoose.connection.db?.dropDatabase();
     const res = await request(app)
       .post('/api/users/register')

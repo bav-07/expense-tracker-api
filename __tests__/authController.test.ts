@@ -15,7 +15,7 @@ describe('Auth Controller Tests', () => {
   
   beforeAll(async () => {
     // Connect to the test database
-    testConnection = mongoose.createConnection(process.env.TEST_MONGO_URI as string);
+    testConnection = mongoose.createConnection(process.env.MONGO_URI as string);
     await mongoose.connection.db?.dropDatabase();
   });
 

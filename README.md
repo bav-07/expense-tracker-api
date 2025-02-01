@@ -14,6 +14,7 @@ Expense Tracker API: a RESTful service that allows users to securely manage thei
 ### Prerequisites
 - Node.js
 - npm
+- MongoDB
 
 ### Installation
 1. Clone the repository:
@@ -30,14 +31,23 @@ Expense Tracker API: a RESTful service that allows users to securely manage thei
   ```
 
 ### Configuration
-Create a `.env` file in the root directory and add the following environment variables:
+Create a `.env.development` file in the root directory and add the following environment variables:
 ```
-NODE_ENV=your_environment
+NODE_ENV=development
 PORT=3000
-MONGO_URI=your_mongodb_uri
-TEST_MONGO_URI=your_test_mongodb_uri
 JWT_SECRET=your_jwt_secret
+MONGO_URI=your_mongodb_uri
 ```
+
+For testing purposes, create a `.env.test` file in the root directory with the following:
+```
+NODE_ENV=test
+PORT=3000
+JWT_SECRET=your_jwt_secret
+MONGO_URI=test_mongodb_uri
+```
+
+For local development/testing, it's advised to use a MONGO_URI of `mongodb://localhost:27017/{dbname}`, but remember to use a different one for development and test, or you risk modifying/deleting your development database data.
 
 ### Running the API
 Start the server:
@@ -87,5 +97,6 @@ npm test
 The script, as you'll see in `package.json`, runs `jest` with the flag `--runInBand`, which runs the test files sequentially, ensuring one completes before the next begins. This is to avoid race conditions, as the tests are modifying a shared test database.
 
 The coverage report will be available in the `coverage` directory.
+
 ## License
 This project is licensed under the MIT License.

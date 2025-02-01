@@ -8,11 +8,12 @@ import expenseRoutes from './routes/expense';
 import savingsRoutes from './routes/savings';
 import connectDB from './config/db';
 
-connectDB();
-
-dotenv.config();
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
 
 const app: Application = express();
+
+connectDB();
 
 // Middleware
 configureMiddleware(app)
