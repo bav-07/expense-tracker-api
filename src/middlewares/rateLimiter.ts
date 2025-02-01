@@ -5,13 +5,13 @@ export const rateLimiter = rateLimit({
   max: 100,
   message: "Too many requests, please try again later",
   standardHeaders: true,
-  legacyHeaders: true,
+  legacyHeaders: false,
   skip: ((req) => {
     return (
       req.path.startsWith('/api/users/login') || req.path.startsWith('/api/users/register')
     )
   })
-})
+});
 
 export const loginRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
