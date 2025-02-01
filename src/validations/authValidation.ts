@@ -29,9 +29,8 @@ export const loginSchema = Joi.object({
     'string.email': 'Email should be a valid email',
     'any.required': messages['any.required']
   }),
-  password: Joi.string().min(6).max(200).required().messages({
+  password: Joi.string().max(200).required().messages({
     'string.base': messages['string.base'],
-    'string.min': 'Password should have a minimum length of {#limit}',
     'string.max': 'Password should have a maximum length of {#limit}',
     'any.required': messages['any.required']
   }),
