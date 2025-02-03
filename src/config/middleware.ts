@@ -23,7 +23,13 @@ export default (app: Application) => {
         credentials: true,
     };
 
-    app.use(helmet());
+    app.use(helmet(
+        {
+            frameguard: { action: 'deny' },
+            contentSecurityPolicy: false,
+            crossOriginEmbedderPolicy: false,
+        },
+    ));
     app.use(cors(corsOptions));
     app.use(morgan('dev'));
     app.use(rateLimiter);
