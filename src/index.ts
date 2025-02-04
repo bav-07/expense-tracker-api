@@ -7,6 +7,7 @@ import incomeRoutes from './routes/income';
 import expenseRoutes from './routes/expense';
 import savingsRoutes from './routes/savings';
 import connectDB from './config/db';
+import logger from './utils/logger';
 
 const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
 dotenv.config({ path: envFile });
@@ -32,7 +33,12 @@ app.use((req: Request, res: Response, _next: NextFunction) => {
 
 // Global error handler
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
-  console.error(err.stack);
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    route: req.originalUrl,
+    method: req.method,
+  });
   res.status(500).json({ error: err.message ?? 'Internal Server Error' });
 });
 

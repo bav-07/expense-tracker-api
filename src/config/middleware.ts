@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { rateLimiter } from '../middlewares/rateLimiter';
 import requestLogger from '../middlewares/logger';
+import errorHandler from '../middlewares/errorHandler';
 
 export default (app: Application) => {
 
@@ -35,5 +36,6 @@ export default (app: Application) => {
     app.use(morgan('dev'));
     app.use(rateLimiter);
     app.use(requestLogger);
+    app.use(errorHandler);
     app.use(express.json());
 };
