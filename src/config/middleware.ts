@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { rateLimiter } from '../middlewares/rateLimiter';
+import requestLogger from '../middlewares/logger';
 
 export default (app: Application) => {
 
@@ -33,5 +34,6 @@ export default (app: Application) => {
     app.use(cors(corsOptions));
     app.use(morgan('dev'));
     app.use(rateLimiter);
+    app.use(requestLogger);
     app.use(express.json());
 };
