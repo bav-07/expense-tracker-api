@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import logger from "../utils/logger";
 
 const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
+  console.error('Logging error: ', err.message);
   logger.error({
     message: err.message,
     stack: err.stack,
