@@ -1,11 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import { Schema } from "joi";
+import logger from '../utils/logger';
 
 const validate = (schema: Schema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req.body, { abortEarly: false });
     if (error) {
-      res.status(400).json({ error: error.details.map(detail => detail.message) });
+      const errorMessages = error.details.map(detail => detail.message);
+
+      logger.error({
+        message: 'Validation error',
+        errors: errorMessages,
+        route: req.originalUrl,
+        method: req.method,
+      })
+
+      res.status(400).json({ error: errorMessages });
       return;
     }
     next();

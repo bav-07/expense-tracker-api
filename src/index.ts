@@ -7,8 +7,7 @@ import incomeRoutes from './routes/income';
 import expenseRoutes from './routes/expense';
 import savingsRoutes from './routes/savings';
 import connectDB from './config/db';
-import logger from './utils/logger';
-import errorHandler from './middlewares/errorHandler';
+import { errorHandler } from './middlewares/errorHandler';
 
 const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
 dotenv.config({ path: envFile });
