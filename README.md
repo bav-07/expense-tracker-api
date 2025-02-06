@@ -98,5 +98,14 @@ The script, as you'll see in `package.json`, runs `jest` with the flag `--runInB
 
 The coverage report will be available in the `coverage` directory.
 
+## Logging
+**Winston** is used for error logging and **Morgan** is used for request logging. Logging is disabled when running tests (`NODE_ENV=test`).
+
+### Error Logging
+Errors are automatically caught and handled by a **global error handler**, which will then log the errors with a standardised approach. All server errors are logged to `logs/error.log`.
+
+### Request Logging
+All HTTP requests are logged to `logs/access.log`. Uses Apache combined format for detailed logs.
+
 ## License
 This project is licensed under the MIT License.
