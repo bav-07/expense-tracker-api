@@ -52,6 +52,9 @@ export const createExpense = catchAsync(async (req: IGetUserAuthInfoRequest, res
 
 export const updateExpense = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   const { category, amount, date } = req.body;
+  if (!category && !amount && !date) {
+    throw new AppError('At least one of the following fields are required: category, amount, date', 400);
+  }
   const expense = await Expense.findOneAndUpdate({ _id: req.params.id, userId: req.user?.id }, { category, amount, date }, { new: true });
   if (!expense) {
     throw new AppError('Expense not found', 404);

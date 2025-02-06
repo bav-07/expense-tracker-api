@@ -8,7 +8,7 @@ import {
   getExpensesByPeriod
 } from '../controllers/expenseController';
 import { protect } from '../middlewares/authMiddleware';
-import expenseSchema from '../validations/expenseValidation';
+import { expenseSchema, updateExpenseSchema } from '../validations/expenseValidation';
 import validate from '../middlewares/validateMiddleware';
 import { validateObjectId } from '../validations/validateParams';
 import { dateRangeSchema } from '../validations/validationSchemas';
@@ -22,7 +22,7 @@ router.get('/', getExpenses);
 router.get('/period', validateQuery(dateRangeSchema), getExpensesByPeriod);
 router.get('/:id', validateObjectId, getExpenseById);
 router.post('/', validate(expenseSchema), createExpense);
-router.put('/:id', validateObjectId, updateExpense);
+router.put('/:id', validateObjectId, validate(updateExpenseSchema), updateExpense);
 router.delete('/:id', validateObjectId, deleteExpense);
 
 export default router;

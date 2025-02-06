@@ -260,35 +260,9 @@ describe('Income Controller Tests', () => {
     const resNoSource = await request(app)
       .put(`/api/income/${newIncomeResponse.body.income._id}`)
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        amount: 1500,
-        date: '2022-04-01',
-        frequency: 'weekly'
-      });
+      .send();
     expect(resNoSource.status).toBe(400);
-    expect(resNoSource.body).toHaveProperty('error', 'All fields are required');
-
-    const resNoAmount = await request(app)
-      .put(`/api/income/${newIncomeResponse.body.income._id}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        source: 'Updated Salary',
-        date: '2022-04-01',
-        frequency: 'weekly'
-      });
-    expect(resNoAmount.status).toBe(400);
-    expect(resNoAmount.body).toHaveProperty('error', 'All fields are required');
-
-    const resNoDate = await request(app)
-      .put(`/api/income/${newIncomeResponse.body.income._id}`)
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        source: 'Updated Salary',
-        amount: 1500,
-        frequency: 'weekly'
-      });
-    expect(resNoDate.status).toBe(400);
-    expect(resNoDate.body).toHaveProperty('error', 'All fields are required');
+    expect(resNoSource.body).toHaveProperty('error', 'At least one of the following fields are required: source, amount, date, frequency');
   });
 
   it('should not update an income if income not found', async () => {

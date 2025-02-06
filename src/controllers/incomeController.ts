@@ -54,8 +54,8 @@ export const createIncome = catchAsync(async (req: IGetUserAuthInfoRequest, res:
 
 export const updateIncome = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   const { source, amount, date, frequency } = req.body;
-  if (!source || !amount || !date) {
-    throw new AppError('All fields are required', 400);
+  if (!source && !amount && !date && !frequency) {
+    throw new AppError('At least one of the following fields are required: source, amount, date, frequency', 400);
   }
   const income = await Income.findOneAndUpdate({ _id: req.params.id, userId: req.user?.id }, { source, amount, date, frequency }, { new: true });
   if (!income) {

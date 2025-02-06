@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import messages from './validationMessages';
 
-const expenseSchema = Joi.object({
+export const expenseSchema = Joi.object({
   amount: Joi.number().positive().required().messages({
     'number.base': messages['number.base'],
     'number.positive': messages['number.positive'],
@@ -20,4 +20,18 @@ const expenseSchema = Joi.object({
   })
 });
 
-export default expenseSchema;
+export const updateExpenseSchema = Joi.object({
+  amount: Joi.number().positive().optional().messages({
+    'number.base': messages['number.base'],
+    'number.positive': messages['number.positive'],
+  }),
+  date: Joi.date().iso().optional().messages({
+    'date.base': messages['date.base'],
+    'date.iso': messages['date.iso'],
+  }),
+  category: Joi.string().min(3).max(100).optional().messages({
+    'string.base': messages['string.base'],
+    'string.min': messages['string.min'],
+    'string.max': messages['string.max'],
+  }),
+});

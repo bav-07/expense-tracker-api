@@ -172,6 +172,24 @@ describe('Expense Controller Tests', () => {
     expect(res.body.expense.amount).toBe(25);
   });
 
+  it('should not update an expense if no category, amount or date is provided', async () => {
+    const newExpense = await request(app)
+      .post('/api/expense')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        category: 'Transport',
+        amount: 20,
+        date: '2022-01-03',
+      });
+
+    const resNoFields = await request(app)
+      .put(`/api/expense/${newExpense.body.expense._id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send();
+    expect(resNoFields.status).toBe(400);
+    expect(resNoFields.body).toHaveProperty('error', 'At least one of the following fields are required: category, amount, date');
+  });
+
   it('should not update an expense if expense not found', async () => {
     const res = await request(app)
       .put(`/api/expense/${new mongoose.Types.ObjectId()}`)

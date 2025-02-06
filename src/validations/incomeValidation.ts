@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import messages from './validationMessages';
 
-const incomeSchema = Joi.object({
+export const incomeSchema = Joi.object({
   amount: Joi.number().positive().required().messages({
     'number.base': messages['number.base'],
     'number.positive': messages['number.positive'],
@@ -24,4 +24,22 @@ const incomeSchema = Joi.object({
   }),
 });
 
-export default incomeSchema;
+export const updateIncomeSchema = Joi.object({
+  amount: Joi.number().positive().optional().messages({
+    'number.base': messages['number.base'],
+    'number.positive': messages['number.positive'],
+  }),
+  source: Joi.string().min(3).max(100).optional().messages({
+    'string.base': messages['string.base'],
+    'string.min': messages['string.min'],
+    'string.max': messages['string.max'],
+  }),
+  date: Joi.date().iso().optional().messages({
+    'date.base': messages['date.base'],
+    'date.iso': messages['date.iso'],
+  }),
+  frequency: Joi.string().valid('weekly', 'monthly').optional().messages({
+    'string.base': messages['string.base'],
+    'any.only': messages['any.onlyfrequency'],
+  }),
+});
