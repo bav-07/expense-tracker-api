@@ -10,6 +10,7 @@ const validate = (schema: Schema) => {
 
       logger.error({
         message: 'Validation error',
+        statusCode: 400,
         errors: errorMessages,
         route: req.originalUrl,
         method: req.method,

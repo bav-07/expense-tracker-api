@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import dotenv from 'dotenv';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
+import { AppError } from '../middlewares/errorHandler';
+import catchAsync from '../utils/catchAsync';
 
 dotenv.config();
 
@@ -10,76 +12,50 @@ const generateToken = (userId: string): string => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 };
 
-export const register = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { name, email, password } = req.body;
+export const register = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const { name, email, password } = req.body;
 
-    // Validate input
-    if (!name || !email || !password) {
-      res.status(400).json({ error: 'All fields are required'});
-      return;
-    }
-
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      res.status(400).json({ error: 'User already exists'});
-      return;
-    }
-
-    // Create and save the user
-    const user = new User({ name, email, password });
-    await user.save();
-
-    // Generate a JWT token
-    const token = generateToken(user.id);
-    res.status(201).json({ token, user: { id: user.id, name, email } });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to register user'});
+  if (!name || !email || !password) {
+    throw new AppError('All fields are required', 400);
   }
-};
 
-export const login = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-
-    // Validate input
-    if (!email || !password) {
-      res.status(400).json({ error: 'All fields are required'});
-      return;
-    }
-
-    // Find the user
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
-      res.status(401).json({ error: 'Invalid email or password'});
-      return;
-    }
-    // Generate a JWT token
-    const token = generateToken(user.id);
-    res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email } });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to login'});
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new AppError('User already exists', 400);
   }
-};
 
-// Get authenticated user profile
-export const getUserProfile = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const user = new User({ name, email, password });
+  await user.save();
+
+  const token = generateToken(user.id);
+  res.status(201).json({ token, user: { id: user.id, name, email } });
+});
+
+export const login = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new AppError('All fields are required', 400);
+  }
+
+  const user = await User.findOne({ email });
+  if (!user || !(await user.comparePassword(password))) {
+    throw new AppError('Invalid email or password', 401);
+  }
+  const token = generateToken(user.id);
+  res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+});
+
+export const getUserProfile = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
   const user = req.user;
   if (!user) {
-    res.status(401).json({ error: 'Not authenticated' });
-    return;
+    throw new AppError('Not authenticated', 401);
   }
   res.status(200).json(user);
-};
+});
 
-// Update user preferences
-export const updatePreferences = async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
-  try {
-    const { weekStart, monthStart } = req.body;
-    const user = await User.findByIdAndUpdate(req.user?.id, { weekStart, monthStart }, { new: true });
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update preferences' });
-  }
-}
+export const updatePreferences = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const { weekStart, monthStart } = req.body;
+  const user = await User.findByIdAndUpdate(req.user?.id, { weekStart, monthStart }, { new: true });
+  res.status(200).json(user);
+});
