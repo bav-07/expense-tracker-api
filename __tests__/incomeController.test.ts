@@ -257,12 +257,12 @@ describe('Income Controller Tests', () => {
         frequency: 'monthly'
       });
 
-    const resNoSource = await request(app)
+    const resNoFields = await request(app)
       .put(`/api/income/${newIncomeResponse.body.income._id}`)
       .set('Authorization', `Bearer ${token}`)
       .send();
-    expect(resNoSource.status).toBe(400);
-    expect(resNoSource.body).toHaveProperty('error', 'At least one of the following fields are required: source, amount, date, frequency');
+    expect(resNoFields.status).toBe(400);
+    expect(resNoFields.body).toHaveProperty('error', 'At least one of the following fields are required: source, amount, date, frequency');
   });
 
   it('should not update an income if income not found', async () => {
