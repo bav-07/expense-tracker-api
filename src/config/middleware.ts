@@ -9,10 +9,11 @@ export default (app: Application) => {
 
     const corsOptions = {
         origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+            const allowedOrigins = process.env.ALLOWED_ORIGIN?.split(',') || [];
             if (['development', 'test'].includes(process.env.NODE_ENV as string)) {
                 callback(null, true);
             } else {
-                if (origin === process.env.ALLOWED_ORIGIN) {
+                if (origin && allowedOrigins.includes(origin)) {
                     callback(null, true);
                 } else {
                     callback(new Error('Not allowed by CORS'));
