@@ -5,6 +5,7 @@ dotenv.config();
 
 const connectDB = async (): Promise<void> => {
   try {
+    mongoose.set('sanitizeFilter', true);
     const dbUri: string = process.env.MONGO_URI as string;
     await mongoose.connect(dbUri);
     console.log('MongoDB connected');

@@ -37,4 +37,5 @@ export default (app: Application) => {
     app.use(rateLimiter);
     app.use(requestLogger);
     app.use(express.json());
+    app.disable('x-powered-by');
 };
