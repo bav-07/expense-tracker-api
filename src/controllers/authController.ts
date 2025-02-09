@@ -8,6 +8,12 @@ import catchAsync from '../utils/catchAsync';
 
 dotenv.config();
 
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: "strict" as const,
+}
+
 const generateToken = (userId: string): string => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 };
@@ -28,6 +34,7 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   await user.save();
 
   const token = generateToken(user.id);
+  res.cookie('token', token, cookieOptions);
   res.status(201).json({ token, user: { id: user.id, name, email } });
 });
 

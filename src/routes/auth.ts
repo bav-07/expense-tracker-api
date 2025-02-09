@@ -11,5 +11,8 @@ router.get('/profile', protect, getUserProfile);
 router.post('/register', registerRateLimiter, validate(registerSchema), register);
 router.post('/login', loginRateLimiter, validate(loginSchema), login);
 router.put('/preferences', protect, validate(updatePreferencesSchema), updatePreferences);
+router.get('/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() })
+})
 
 export default router;
