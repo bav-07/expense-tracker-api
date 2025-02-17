@@ -1,7 +1,6 @@
 import express, { Application } from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import csurf from 'csurf';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { rateLimiter } from '../middlewares/rateLimiter';
@@ -38,7 +37,6 @@ export default (app: Application) => {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());
-    app.use(csurf({ cookie: true }));
     app.use(morgan('dev'));
     app.use(rateLimiter);
     app.use(requestLogger);
