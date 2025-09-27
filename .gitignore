@@ -1,9 +1,9 @@
 .env*
 .vscode
-/coverage
 node_modules
 logs/
 
+/server/coverage/*
 /server/node_modules
 /server/logs
 /server/dist
