@@ -32,11 +32,11 @@ export const getExpensesByPeriod = catchAsync(async (req: IGetUserAuthInfoReques
     throw new AppError('Invalid date format. Use YYYY-MM-DD', 400);
   }
 
-  const expenses = await Expense.find({
-    userId: mongoose.Types.ObjectId.createFromHexString(req.user?.id?.toString()),
-    date: { $gte: start, $lte: end },
-  }).sort({ date: 'asc' });
-
+  const userId = mongoose.Types.ObjectId.createFromHexString(req.user?.id?.toString());
+  const expenses = await Expense.aggregate([
+    { $match: { userId, date: { $gte: start, $lte: end } } },
+    { $sort: { date: 1 } }
+  ]);
   res.status(200).json(expenses);
 });
 
@@ -45,7 +45,14 @@ export const createExpense = catchAsync(async (req: IGetUserAuthInfoRequest, res
   if (!category || !amount || !date) {
     throw new AppError('All fields are required', 400);
   }
-  const expense = new Expense({ userId: req.user?.id, category, amount, date });
+  if (typeof date === 'object') {
+    throw new AppError('Date field must be a string (YYYY-MM-DD or ISO) — do not send a range object.', 400);
+  }
+  const parsedDate = new Date(date);
+  if (isNaN(parsedDate.getTime())) {
+    throw new AppError('Invalid date format. Expected YYYY-MM-DD or ISO string.', 400);
+  }
+  const expense = new Expense({ userId: req.user?.id, category, amount, date: parsedDate });
   await expense.save();
   res.status(201).json({ expense });
 });
@@ -55,7 +62,20 @@ export const updateExpense = catchAsync(async (req: IGetUserAuthInfoRequest, res
   if (!category && !amount && !date) {
     throw new AppError('At least one of the following fields are required: category, amount, date', 400);
   }
-  const expense = await Expense.findOneAndUpdate({ _id: req.params.id, userId: req.user?.id }, { category, amount, date }, { new: true });
+  const update: any = {};
+  if (category !== undefined) update.category = category;
+  if (amount !== undefined) update.amount = amount;
+  if (date !== undefined) {
+    if (typeof date === 'object') {
+      throw new AppError('Date field must be a string (YYYY-MM-DD or ISO), not an object.', 400);
+    }
+    const parsed = new Date(date);
+    if (isNaN(parsed.getTime())) {
+      throw new AppError('Invalid date format. Expected YYYY-MM-DD or ISO string.', 400);
+    }
+    update.date = parsed;
+  }
+  const expense = await Expense.findOneAndUpdate({ _id: req.params.id, userId: req.user?.id }, update, { new: true });
   if (!expense) {
     throw new AppError('Expense not found', 404);
   }
