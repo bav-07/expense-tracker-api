@@ -15,7 +15,8 @@ describe('Auth Controller Tests', () => {
   
   beforeAll(async () => {
     // Connect to the test database
-    testConnection = mongoose.createConnection(process.env.MONGO_URI as string);
+    const testUri = process.env.MONGO_TEST_URI || 'mongodb://localhost:27017/express-jwt-auth-test';
+    testConnection = mongoose.createConnection(testUri);
     await mongoose.connection.db?.dropDatabase();
   });
 

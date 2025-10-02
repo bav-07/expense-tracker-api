@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="128" height="128" role="img" aria-label="Rounded square wallet logo line with balanced detail">
+  <title>Rounded Square Wallet Logo (Line + Balanced Detail)</title>
+  <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Rounded square body -->
+    <rect x="12" y="12" width="40" height="40" rx="10"></rect>
+    <!-- Card slot -->
+    <line x1="16" y1="28" x2="48" y2="28"></line>
+    <!-- Tiny detail line (same width as button circle, aligned with its vertical level) -->
+    <line x1="18" y1="36" x2="24" y2="36"></line>
+    <!-- Button -->
+    <circle cx="44" cy="36" r="3"></circle>
+  </g>
+</svg>

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, PieChart, TrendingUp, Shield, WalletMinimal } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight, DollarSign, PieChart, TrendingUp, Shield } from "lucide-react";
 
 export default function Home() {
   return (
@@ -11,8 +10,8 @@ export default function Home() {
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src="/lucra.svg" alt="Lucra" className="h-12 w-12" />
-            <span className="text-xl font-serif-heading font-bold">Lucra</span>
+            <DollarSign className="h-8 w-8 text-primary" />
+            <span className="text-xl font-serif-heading font-bold">ExpenseTracker</span>
           </div>
           <div className="flex items-center space-x-4">
             <Button variant="ghost" asChild>
@@ -27,28 +26,25 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-20">
-        <div className="flex flex-col gap-3 lg:gap-0 lg:flex-row overflow-hidden max-w-6xl justify-self-center items-center">
-          <div className="space-y-6 mx-auto">
-            <h1 className="text-4xl md:text-6xl font-serif-heading font-semibold tracking-tight">
-              Track your money with
-              <span className="text-blue-500 block">simplicity</span>
-            </h1>
-            <p className="text-xl text-muted-foreground  mx-auto">
-              Track expenses, manage income, and build savings with our simple and clean expense tracking application.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-8">
-              <Button size="lg" asChild>
-                <Link href="/register" className="flex items-center gap-2">
-                  Start Tracking Free
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </div>
+        <div className="text-center space-y-6 max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-serif-heading font-bold tracking-tight">
+            Take Control of Your
+            <span className="text-primary block">Financial Future</span>
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Track expenses, manage income, and build savings with our beautiful and intuitive expense tracking application.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+            <Button size="lg" asChild>
+              <Link href="/register" className="flex items-center gap-2">
+                Start Tracking Free
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" asChild>
+              <Link href="/login">Sign In</Link>
+            </Button>
           </div>
-          <Image src="/HeroImage.png" alt="Hero Image" className="aspect-square h-full" width={500} height={500} />
         </div>
 
         {/* Features */}
@@ -116,6 +112,59 @@ export default function Home() {
         <div className="text-center text-muted-foreground">
           <p>&copy; 2025 ExpenseTracker. Built with Next.js and shadcn/ui.</p>
         </div>
+      </footer>
+    </div>
+  );
+}
+          </a>
+        </div>
+      </main>
+      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/file.svg"
+            alt="File icon"
+            width={16}
+            height={16}
+          />
+          Learn
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/window.svg"
+            alt="Window icon"
+            width={16}
+            height={16}
+          />
+          Examples
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/globe.svg"
+            alt="Globe icon"
+            width={16}
+            height={16}
+          />
+          Go to nextjs.org →
+        </a>
       </footer>
     </div>
   );

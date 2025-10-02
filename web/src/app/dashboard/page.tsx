@@ -3,13 +3,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  createIncome,
-  createExpense,
-  listIncome,
-  listExpenses,
-  getSavings
-} from '@/lib/api';
+import { createIncome, createExpense, listIncome, listExpenses, getSavings } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DollarSign, 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet, 
+  LogOut,
+  Calendar,
+  AlertCircle,
+  Plus,
+  WalletMinimal
+} from 'lucide-react';
 
 type Income = { _id: string; amount: number; source: string; date: string; notes?: string };
 type Expense = { _id: string; amount: number; category: string; date: string; notes?: string };
@@ -37,276 +51,460 @@ export default function DashboardPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // ---- form state ----
-  const [incAmt, setIncAmt] = useState<string>('0');
+  const [incAmt, setIncAmt] = useState<string>('');
   const [incSrc, setIncSrc] = useState<string>('salary');
   const [incDate, setIncDate] = useState<string>(todayISO);
+  const [incLoading, setIncLoading] = useState(false);
 
-  const [expAmt, setExpAmt] = useState<string>('0');
+  const [expAmt, setExpAmt] = useState<string>('');
   const [expCat, setExpCat] = useState<string>('groceries');
   const [expDate, setExpDate] = useState<string>(todayISO);
+  const [expLoading, setExpLoading] = useState(false);
 
   // ---- auth gate ----
   useEffect(() => {
     if (authLoading) return;
-    if (!isAuthed) router.replace('/login');
-  }, [authLoading, isAuthed, router]);
+    if (!isAuthed) {
+      router.push('/login');
+      return;
+    }
+  }, [isAuthed, authLoading, router]);
 
-  // ---- data fetch ----
-  const refresh = async () => {
+  // ---- data fetching ----
+  const fetchData = async () => {
+    setLoading(true);
+    setErrorMsg(null);
     try {
-      setErrorMsg(null);
-      setLoading(true);
-      const [i, e, s] = await Promise.all([
+      const [incRes, expRes, savRes] = await Promise.all([
         listIncome(start, end),
         listExpenses(start, end),
-        getSavings(start, end)
+        getSavings(start, end),
       ]);
-      setIncomes(i);
-      setExpenses(e);
-      setSummary(s);
+      setIncomes(Array.isArray(incRes) ? incRes : []);
+      setExpenses(Array.isArray(expRes) ? expRes : []);
+      setSummary(savRes || null);
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to load data');
+      console.log(err);
+      setErrorMsg(err.message || 'Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (!isAuthed || authLoading) return;
-    void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthed, authLoading, start, end]);
+    if (isAuthed && !authLoading) {
+      fetchData();
+    }
+  }, [start, end, isAuthed, authLoading]);
 
-  // ---- handlers ----
-  const onAddIncome = async (e: React.FormEvent) => {
+  // ---- add income ----
+  const handleAddIncome = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!incAmt || parseFloat(incAmt) <= 0) {
+      setErrorMsg('Please enter a valid income amount');
+      return;
+    }
+    
+    setIncLoading(true);
+    setErrorMsg(null);
+    
     try {
-      setErrorMsg(null);
-      await createIncome({
-        amount: Number(incAmt),
-        source: incSrc.trim() || 'income',
-        date: new Date(incDate).toISOString()
+      await createIncome({ 
+        amount: parseFloat(incAmt), 
+        source: incSrc, 
+        date: incDate 
       });
-      setIncAmt('0');
-      await refresh();
+      setIncAmt('');
+      setIncSrc('salary');
+      setIncDate(todayISO);
+      await fetchData(); // Refresh data
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to add income');
+      setErrorMsg(err.message || 'Failed to add income');
+    } finally {
+      setIncLoading(false);
     }
   };
 
-  const onAddExpense = async (e: React.FormEvent) => {
+  // ---- add expense ----
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!expAmt || parseFloat(expAmt) <= 0) {
+      setErrorMsg('Please enter a valid expense amount');
+      return;
+    }
+    
+    setExpLoading(true);
+    setErrorMsg(null);
+    
     try {
-      setErrorMsg(null);
-      await createExpense({
-        amount: Number(expAmt),
-        category: expCat.trim() || 'expense',
-        date: new Date(expDate).toISOString()
+      await createExpense({ 
+        amount: parseFloat(expAmt), 
+        category: expCat, 
+        date: expDate 
       });
-      setExpAmt('0');
-      await refresh();
+      setExpAmt('');
+      setExpCat('groceries');
+      setExpDate(todayISO);
+      await fetchData(); // Refresh data
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Failed to add expense');
+      setErrorMsg(err.message || 'Failed to add expense');
+    } finally {
+      setExpLoading(false);
     }
   };
 
-  // ---- loading/auth fallback ----
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   if (authLoading) {
     return (
-      <main className="min-h-dvh grid place-items-center">
-        <p className="text-sm text-gray-600">Loading…</p>
-      </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
     );
   }
-  if (!isAuthed) return null; // redirect in effect above
+
+  if (!isAuthed) return null;
 
   return (
-    <main className="min-h-dvh bg-gray-50">
-      <header className="mx-auto flex max-w-5xl items-center justify-between p-6">
-        <h1 className="text-2xl font-semibold tracking-tighter">Lucra</h1>
-        <button
-          onClick={logout}
-          className="rounded-xl border px-4 py-2 text-sm hover:bg-gray-100"
-        >
-          Logout
-        </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <img src="/lucra.svg" alt="Lucra" className="h-8 w-8" />
+              <span className="text-xl font-serif-heading font-bold">Lucra</span>
+            </div>
+            <Button variant="outline" onClick={logout} className="flex items-center gap-2">
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
       </header>
 
-      <section className="mx-auto max-w-5xl space-y-6 p-6">
-        {/* Date range + summary */}
-        <div className="rounded-2xl bg-white p-4 shadow">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end">
-            <div>
-              <label className="block text-sm text-gray-600">Start</label>
-              <input
-                type="date"
-                className="rounded-lg border p-2"
-                value={start}
-                onChange={e => setStart(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600">End</label>
-              <input
-                type="date"
-                className="rounded-lg border p-2"
-                value={end}
-                onChange={e => setEnd(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={() => void refresh()}
-              className="rounded-xl border btn-primary px-4 py-2 hover:opacity-90"
-            >
-              Refresh
-            </button>
+      <main className="container max-w-6xl mx-auto px-4 py-8">
+        {/* Date Range Selector with Summary */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Financial Overview
+            </CardTitle>
+            <CardDescription>
+              Select date range and view your financial summary
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Date Range Inputs */}
+              <div className="flex flex-col gap-4 items-end w-min">
+                <div className="flex flex-row items-center gap-2 space-y-2">
+                  <Label htmlFor="start-date" className="mb-0">From</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={start}
+                    onChange={(e) => setStart(e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-row items-center gap-2 space-y-2">
+                  <Label htmlFor="end-date" className="mb-0">To</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={end}
+                    onChange={(e) => setEnd(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            <div className="md:ml-auto text-sm">
-              {summary ? (
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-gray-600">Total Income</div>
-                    <div className="font-semibold">£{summary.totalIncome.toFixed(2)}</div>
+              {/* Summary Stats */}
+              <div className="flex-1 lg:flex lg:justify-end">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-row gap-4 lg:gap-6 lg:w-min">
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200 min-w-[175px]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-green-800" />
+                      <span className="text-sm font-medium text-green-800">Total Income</span>
+                    </div>
+                    <div className="text-xl font-semibold tracking-wide text-green-700">
+                      {summary && formatCurrency(summary.totalIncome)}
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-gray-600">Total Expenses</div>
-                    <div className="font-semibold">£{summary.totalExpenses.toFixed(2)}</div>
+                  
+                  <div className="p-4 bg-red-50 rounded-lg border border-red-200 min-w-[175px]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingDown className="h-4 w-4 text-red-800" />
+                      <span className="text-sm font-medium text-red-800">Total Expenses</span>
+                    </div>
+                    <div className="text-xl font-semibold tracking-wide text-red-700">
+                      {summary && formatCurrency(summary.totalExpenses)}
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-gray-600">Savings</div>
-                    <div className="font-semibold">£{summary.savings.toFixed(2)}</div>
+                  
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 min-w-[175px]">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wallet className="h-4 w-4 text-blue-800" />
+                      <span className="text-sm font-medium text-blue-800">Net Savings</span>
+                    </div>
+                    <div className={`text-xl font-semibold tracking-wide ${summary ? summary.savings >= 0 ? 'text-blue-700' : 'text-red-800' : ''}`}>
+                      {summary && formatCurrency(summary.savings)}
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div className="text-gray-500">{loading ? 'Loading…' : 'No data yet'}</div>
-              )}
-            </div>
-          </div>
-
-          {errorMsg && (
-            <p className="mt-3 rounded bg-red-50 p-2 text-sm text-red-700">{errorMsg}</p>
-          )}
-        </div>
-
-        {/* Forms + lists */}
-        <div className="grid gap-6 md:grid-cols-3">
-          {/* Add Income */}
-          <form onSubmit={onAddIncome} className="rounded-2xl bg-white p-4 shadow">
-            <h2 className="mb-3 font-medium">Add Income</h2>
-            <input
-              className="mb-2 w-full rounded-lg border p-2"
-              type="number"
-              step="0.01"
-              placeholder="Amount"
-              value={incAmt}
-              onChange={e => setIncAmt(e.target.value)}
-              required
-            />
-            <input
-              className="mb-2 w-full rounded-lg border p-2"
-              placeholder="Source"
-              value={incSrc}
-              onChange={e => setIncSrc(e.target.value)}
-              required
-            />
-            <input
-              className="mb-3 w-full rounded-lg border p-2"
-              type="date"
-              value={incDate}
-              onChange={e => setIncDate(e.target.value)}
-              required
-            />
-            <button
-              className="w-full rounded-xl border btn-primary p-2 hover:opacity-90 disabled:opacity-50"
-              disabled={loading}
-            >
-              Save
-            </button>
-          </form>
-
-          {/* Add Expense */}
-          <form onSubmit={onAddExpense} className="rounded-2xl bg-white p-4 shadow">
-            <h2 className="mb-3 font-medium">Add Expense</h2>
-            <input
-              className="mb-2 w-full rounded-lg border p-2"
-              type="number"
-              step="0.01"
-              placeholder="Amount"
-              value={expAmt}
-              onChange={e => setExpAmt(e.target.value)}
-              required
-            />
-            <input
-              className="mb-2 w-full rounded-lg border p-2"
-              placeholder="Category"
-              value={expCat}
-              onChange={e => setExpCat(e.target.value)}
-              required
-            />
-            <input
-              className="mb-3 w-full rounded-lg border p-2"
-              type="date"
-              value={expDate}
-              onChange={e => setExpDate(e.target.value)}
-              required
-            />
-            <button
-              className="w-full rounded-xl border btn-primary p-2 hover:opacity-90 disabled:opacity-50"
-              disabled={loading}
-            >
-              Save
-            </button>
-          </form>
-
-          {/* Recent lists */}
-          <div className="rounded-2xl bg-white p-4 shadow">
-            <h2 className="mb-3 font-medium">Recent</h2>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <h3 className="text-sm text-gray-600">Income</h3>
-                {incomes.length === 0 ? (
-                  <p className="text-sm text-gray-500">No income in range.</p>
-                ) : (
-                  <ul className="text-sm">
-                    {incomes.map(i => (
-                      <li key={i._id} className="flex justify-between border-b py-1">
-                        <span title={new Date(i.date).toLocaleDateString()}>{i.source}</span>
-                        <span>£{i.amount.toFixed(2)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-sm text-gray-600">Expenses</h3>
-                {expenses.length === 0 ? (
-                  <p className="text-sm text-gray-500">No expenses in range.</p>
-                ) : (
-                  <ul className="text-sm">
-                    {expenses.map(x => (
-                      <li key={x._id} className="flex justify-between border-b py-1">
-                        <span title={new Date(x.date).toLocaleDateString()}>{x.category}</span>
-                        <span>£{x.amount.toFixed(2)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+
+        {/* Error Alert */}
+        {errorMsg && (
+          <Alert variant="destructive" className="mb-8">
+            <AlertCircle className="h-4 w-4 relative" />
+            <AlertDescription>{errorMsg}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Add Income and Expense Forms */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Add Income Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-green-700" />
+                Add Income
+              </CardTitle>
+              <CardDescription>
+                Record a new income entry
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddIncome} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="income-amount">Amount ($)</Label>
+                    <Input
+                      id="income-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={incAmt}
+                      onChange={(e) => setIncAmt(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="income-date">Date</Label>
+                    <Input
+                      id="income-date"
+                      type="date"
+                      value={incDate}
+                      onChange={(e) => setIncDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="income-source">Source</Label>
+                  <Select value={incSrc} onValueChange={setIncSrc}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salary">Salary</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                      <SelectItem value="investment">Investment</SelectItem>
+                      <SelectItem value="bonus">Bonus</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full" disabled={incLoading}>
+                  {incLoading ? 'Adding...' : 'Add Income'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Add Expense Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-red-700" />
+                Add Expense
+              </CardTitle>
+              <CardDescription>
+                Record a new expense entry
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddExpense} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-amount">Amount ($)</Label>
+                    <Input
+                      id="expense-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={expAmt}
+                      onChange={(e) => setExpAmt(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="expense-date">Date</Label>
+                    <Input
+                      id="expense-date"
+                      type="date"
+                      value={expDate}
+                      onChange={(e) => setExpDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expense-category">Category</Label>
+                  <Select value={expCat} onValueChange={setExpCat}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="groceries">Groceries</SelectItem>
+                      <SelectItem value="transport">Transport</SelectItem>
+                      <SelectItem value="entertainment">Entertainment</SelectItem>
+                      <SelectItem value="utilities">Utilities</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="dining">Dining Out</SelectItem>
+                      <SelectItem value="shopping">Shopping</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full" disabled={expLoading}>
+                  {expLoading ? 'Adding...' : 'Add Expense'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Footer actions */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => void refresh()}
-            className="rounded-xl border px-4 py-2 text-sm hover:bg-gray-100"
-          >
-            Reload Data
-          </button>
-        </div>
-      </section>
-    </main>
+        {/* Data Tables */}
+        <Tabs defaultValue="income" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="income">Income ({incomes.length})</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses ({expenses.length})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="income">
+            <Card>
+              <CardHeader>
+                <CardTitle>Income Records</CardTitle>
+                <CardDescription>
+                  Your income entries for the selected period
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-muted-foreground">Loading...</p>
+                  </div>
+                ) : incomes.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No income records found for this period
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {incomes.map((inc) => (
+                        <TableRow key={inc._id}>
+                          <TableCell>{formatDate(inc.date)}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{inc.source}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-green-600">
+                            {formatCurrency(inc.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="expenses">
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Records</CardTitle>
+                <CardDescription>
+                  Your expense entries for the selected period
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-muted-foreground">Loading...</p>
+                  </div>
+                ) : expenses.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No expense records found for this period
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map((exp) => (
+                        <TableRow key={exp._id}>
+                          <TableCell>{formatDate(exp.date)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{exp.category}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-red-600">
+                            {formatCurrency(exp.amount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
+    </div>
   );
 }
