@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { DatePicker } from '@/components/ui/date-picker';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -34,14 +35,14 @@ export default function DashboardPage() {
   const { isAuthed, loading: authLoading, logout } = useAuth();
 
   // ---- dates (default: current month) ----
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const firstOfMonthISO = useMemo(() => {
+  const today = useMemo(() => new Date(), []);
+  const firstOfMonth = useMemo(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
   }, []);
 
-  const [start, setStart] = useState<string>(firstOfMonthISO);
-  const [end, setEnd] = useState<string>(todayISO);
+  const [start, setStart] = useState<Date>(firstOfMonth);
+  const [end, setEnd] = useState<Date>(today);
 
   // ---- data state ----
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -53,12 +54,12 @@ export default function DashboardPage() {
   // ---- form state ----
   const [incAmt, setIncAmt] = useState<string>('');
   const [incSrc, setIncSrc] = useState<string>('salary');
-  const [incDate, setIncDate] = useState<string>(todayISO);
+  const [incDate, setIncDate] = useState<Date>(today);
   const [incLoading, setIncLoading] = useState(false);
 
   const [expAmt, setExpAmt] = useState<string>('');
   const [expCat, setExpCat] = useState<string>('groceries');
-  const [expDate, setExpDate] = useState<string>(todayISO);
+  const [expDate, setExpDate] = useState<Date>(today);
   const [expLoading, setExpLoading] = useState(false);
 
   // ---- auth gate ----
@@ -75,10 +76,13 @@ export default function DashboardPage() {
     setLoading(true);
     setErrorMsg(null);
     try {
+      const startISO = dateToISO(start);
+      const endISO = dateToISO(end);
+      
       const [incRes, expRes, savRes] = await Promise.all([
-        listIncome(start, end),
-        listExpenses(start, end),
-        getSavings(start, end),
+        listIncome(startISO, endISO),
+        listExpenses(startISO, endISO),
+        getSavings(startISO, endISO),
       ]);
       setIncomes(Array.isArray(incRes) ? incRes : []);
       setExpenses(Array.isArray(expRes) ? expRes : []);
@@ -112,11 +116,11 @@ export default function DashboardPage() {
       await createIncome({ 
         amount: parseFloat(incAmt), 
         source: incSrc, 
-        date: incDate 
+        date: dateToISO(incDate) 
       });
       setIncAmt('');
       setIncSrc('salary');
-      setIncDate(todayISO);
+      setIncDate(today);
       await fetchData(); // Refresh data
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to add income');
@@ -140,11 +144,11 @@ export default function DashboardPage() {
       await createExpense({ 
         amount: parseFloat(expAmt), 
         category: expCat, 
-        date: expDate 
+        date: dateToISO(expDate) 
       });
       setExpAmt('');
       setExpCat('groceries');
-      setExpDate(todayISO);
+      setExpDate(today);
       await fetchData(); // Refresh data
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to add expense');
@@ -166,6 +170,11 @@ export default function DashboardPage() {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Helper to convert Date to ISO string for API
+  const dateToISO = (date: Date) => {
+    return date.toISOString().slice(0, 10);
   };
 
   if (authLoading) {
@@ -217,20 +226,20 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-4 items-end w-min">
                 <div className="flex flex-row items-center gap-2 space-y-2">
                   <Label htmlFor="start-date" className="mb-0">From</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
+                  <DatePicker
                     value={start}
-                    onChange={(e) => setStart(e.target.value)}
+                    onChange={(date) => date && setStart(date)}
+                    placeholder="Select start date"
+                    className="w-[200px]"
                   />
                 </div>
                 <div className="flex flex-row items-center gap-2 space-y-2">
                   <Label htmlFor="end-date" className="mb-0">To</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
+                  <DatePicker
                     value={end}
-                    onChange={(e) => setEnd(e.target.value)}
+                    onChange={(date) => date && setEnd(date)}
+                    placeholder="Select end date"
+                    className="w-[200px]"
                   />
                 </div>
               </div>
@@ -311,12 +320,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="income-date">Date</Label>
-                    <Input
-                      id="income-date"
-                      type="date"
+                    <DatePicker
                       value={incDate}
-                      onChange={(e) => setIncDate(e.target.value)}
-                      required
+                      onChange={(date) => date && setIncDate(date)}
+                      placeholder="Select date"
                     />
                   </div>
                 </div>
@@ -370,12 +377,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="expense-date">Date</Label>
-                    <Input
-                      id="expense-date"
-                      type="date"
+                    <DatePicker
                       value={expDate}
-                      onChange={(e) => setExpDate(e.target.value)}
-                      required
+                      onChange={(date) => date && setExpDate(date)}
+                      placeholder="Select date"
                     />
                   </div>
                 </div>
