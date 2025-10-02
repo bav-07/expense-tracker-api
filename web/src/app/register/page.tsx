@@ -33,7 +33,7 @@ export default function RegisterPage() {
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-3 rounded-2xl p-6 shadow-2xl"
       >
-        <h1 className="text-xl  font-semibold">Create an Account</h1>
+        <h1 className="text-xl font-semibold">Create an Account</h1>
 
         {error && (
           <p className="rounded bg-red-50 p-2 text-sm text-red-700">

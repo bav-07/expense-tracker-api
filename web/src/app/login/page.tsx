@@ -26,7 +26,7 @@ export default function LoginPage() {
   return (
     <main className="min-h-dvh grid place-items-center bg-gray-50">
       <form onSubmit={onSubmit} className="w-full max-w-sm space-y-3 rounded-2xl bg-white p-6 shadow">
-        <h1 className="text-xl font-semibold">Sign in</h1>
+        <h1 className="text-xl font-semibold tracking-tighter">Sign in</h1>
         {error && <p className="rounded bg-red-50 p-2 text-sm text-red-700">{error}</p>}
         <input className="w-full rounded-lg border p-2" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
         <input className="w-full rounded-lg border p-2" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} />

@@ -123,7 +123,7 @@ export default function DashboardPage() {
   return (
     <main className="min-h-dvh bg-gray-50">
       <header className="mx-auto flex max-w-5xl items-center justify-between p-6">
-        <h1 className="text-2xl font-semibold">Expense Tracker</h1>
+        <h1 className="text-2xl font-semibold tracking-tighter">Lucra</h1>
         <button
           onClick={logout}
           className="rounded-xl border px-4 py-2 text-sm hover:bg-gray-100"
