@@ -11,9 +11,28 @@ export default (app: Application) => {
     const corsOptions = {
         origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
             const allowedOrigins = process.env.ALLOWED_ORIGIN?.split(',') || [];
-            if (['development', 'test', 'production'].includes(process.env.NODE_ENV as string)) {
-                callback(null, true);
-            } else {
+            
+            // In production, strictly enforce allowed origins
+            if (process.env.NODE_ENV === 'production') {
+                if (!origin) {
+                    // Allow requests with no origin (mobile apps, etc.)
+                    callback(null, true);
+                } else if (allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'));
+                }
+            } 
+            // In development and test, be more permissive but still check allowed origins
+            else if (['development', 'test'].includes(process.env.NODE_ENV as string)) {
+                if (!origin || allowedOrigins.includes(origin) || origin.startsWith('http://localhost')) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'));
+                }
+            } 
+            // Fallback: allow only if in allowed origins
+            else {
                 if (origin && allowedOrigins.includes(origin)) {
                     callback(null, true);
                 } else {

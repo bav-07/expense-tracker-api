@@ -8,12 +8,18 @@ export const registerSchema = Joi.object({
     'string.email': 'Email should be a valid email',
     'any.required': messages['any.required']
   }),
-  password: Joi.string().min(6).max(200).required().messages({
-    'string.base': messages['string.base'],
-    'string.min': 'Password should have a minimum length of {#limit}',
-    'string.max': 'Password should have a maximum length of {#limit}',
-    'any.required': messages['any.required']
-  }),
+  password: Joi.string()
+    .min(8)
+    .max(200)
+    .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]'))
+    .required()
+    .messages({
+      'string.base': messages['string.base'],
+      'string.min': 'Password must be at least {#limit} characters long',
+      'string.max': 'Password should have a maximum length of {#limit}',
+      'string.pattern.base': 'Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character (@$!%*?&)',
+      'any.required': messages['any.required']
+    }),
   name: Joi.string().min(3).max(100).required().messages({
     'string.base': messages['string.base'],
     'string.min': 'Name should have a minimum length of {#limit}',
