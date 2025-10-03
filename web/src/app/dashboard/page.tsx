@@ -25,6 +25,7 @@ import {
   Plus,
   WalletMinimal
 } from 'lucide-react';
+import Image from 'next/image';
 
 type Income = { _id: string; amount: number; source: string; date: string; notes?: string };
 type Expense = { _id: string; amount: number; category: string; date: string; notes?: string };
@@ -33,6 +34,9 @@ type Summary = { totalIncome: number; totalExpenses: number; savings: number };
 export default function DashboardPage() {
   const router = useRouter();
   const { isAuthed, loading: authLoading, logout } = useAuth();
+  
+  // ---- client-side mounting state to prevent hydration mismatch ----
+  const [mounted, setMounted] = useState(false);
 
   // ---- dates (default: current month) ----
   const today = useMemo(() => new Date(), []);
@@ -64,6 +68,10 @@ export default function DashboardPage() {
 
   // ---- auth gate ----
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
     if (!isAuthed) {
       router.push('/login');
@@ -88,7 +96,10 @@ export default function DashboardPage() {
       setExpenses(Array.isArray(expRes) ? expRes : []);
       setSummary(savRes || null);
     } catch (err: any) {
-      console.log(err);
+      if (err.message === 'Invalid token') {
+        router.push('/login');
+        return;
+      }
       setErrorMsg(err.message || 'Failed to fetch data');
     } finally {
       setLoading(false);
@@ -158,9 +169,9 @@ export default function DashboardPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
     }).format(amount);
   };
 
@@ -177,7 +188,7 @@ export default function DashboardPage() {
     return date.toISOString().slice(0, 10);
   };
 
-  if (authLoading) {
+  if (!mounted || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-2">
@@ -197,7 +208,7 @@ export default function DashboardPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1">
-              <img src="/lucra.svg" alt="Lucra" className="h-8 w-8" />
+              <Image src="/lucra.svg" alt="Lucra" width={32} height={32} />
               <span className="text-xl font-serif-heading font-bold">Lucra</span>
             </div>
             <Button variant="outline" onClick={logout} className="flex items-center gap-2">
@@ -253,7 +264,7 @@ export default function DashboardPage() {
                       <span className="text-sm font-medium text-green-800">Total Income</span>
                     </div>
                     <div className="text-xl font-semibold tracking-wide text-green-700">
-                      {summary && formatCurrency(summary.totalIncome)}
+                      {summary ? formatCurrency(summary.totalIncome) : '—'}
                     </div>
                   </div>
                   
@@ -263,7 +274,7 @@ export default function DashboardPage() {
                       <span className="text-sm font-medium text-red-800">Total Expenses</span>
                     </div>
                     <div className="text-xl font-semibold tracking-wide text-red-700">
-                      {summary && formatCurrency(summary.totalExpenses)}
+                      {summary ? formatCurrency(summary.totalExpenses) : '—'}
                     </div>
                   </div>
                   
@@ -273,7 +284,7 @@ export default function DashboardPage() {
                       <span className="text-sm font-medium text-blue-800">Net Savings</span>
                     </div>
                     <div className={`text-xl font-semibold tracking-wide ${summary ? summary.savings >= 0 ? 'text-blue-700' : 'text-red-800' : ''}`}>
-                      {summary && formatCurrency(summary.savings)}
+                      {summary ? formatCurrency(summary.savings) : '—'}
                     </div>
                   </div>
                 </div>
@@ -307,7 +318,7 @@ export default function DashboardPage() {
               <form onSubmit={handleAddIncome} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="income-amount">Amount ($)</Label>
+                    <Label htmlFor="income-amount">Amount (£)</Label>
                     <Input
                       id="income-amount"
                       type="number"
@@ -364,7 +375,7 @@ export default function DashboardPage() {
               <form onSubmit={handleAddExpense} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expense-amount">Amount ($)</Label>
+                    <Label htmlFor="expense-amount">Amount (£)</Label>
                     <Input
                       id="expense-amount"
                       type="number"

@@ -34,7 +34,7 @@ export default function Home() {
               <span className="text-blue-500 block">simplicity</span>
             </h1>
             <p className="text-xl text-muted-foreground  mx-auto">
-              Track expenses, manage income, and build savings with our simple and clean expense tracking application.
+              Enter expenses, income, and view savings with our simple and clean expense tracking application.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-8">
               <Button size="lg" asChild>
@@ -52,7 +52,7 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 mt-20">
+        <div className="grid md:grid-cols-3 gap-8 mt-20 max-w-6xl justify-self-center">
           <Card className="text-center">
             <CardHeader>
               <div className="mx-auto w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
@@ -113,8 +113,8 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 mt-20 border-t">
-        <div className="text-center text-muted-foreground">
-          <p>&copy; 2025 ExpenseTracker. Built with Next.js and shadcn/ui.</p>
+        <div className="text-center text-muted-foreground text-xs">
+          <p>&copy; 2025 Lucra. Built with Next.js and shadcn/ui.</p>
         </div>
       </footer>
     </div>
