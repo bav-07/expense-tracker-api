@@ -1,8 +1,23 @@
 import { Router } from 'express';
 import { Request, Response } from 'express';
 import logger from '../utils/logger';
+import { csrfToken } from '../middlewares/csrfProtection';
+
+interface CSRFRequest extends Request {
+  csrfToken?: string;
+}
 
 const router = Router();
+
+/**
+ * Get CSRF token for client-side requests
+ */
+router.get('/csrf-token', csrfToken, (req: CSRFRequest, res: Response) => {
+  res.json({ 
+    csrfToken: req.csrfToken,
+    message: 'CSRF token generated successfully'
+  });
+});
 
 /**
  * CSP violation reporting endpoint

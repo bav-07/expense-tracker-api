@@ -45,7 +45,7 @@ export default (app: Application) => {
             }
         },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
         credentials: true,
     };
 
