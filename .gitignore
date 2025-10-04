@@ -1,6 +1,13 @@
 .env*
 .vscode
-/coverage
-/dist
-/node_modules
+node_modules
 logs/
+
+/server/coverage/*
+/server/node_modules
+/server/logs
+/server/dist
+
+web/.next
+web/.env*
+web/.turbo
