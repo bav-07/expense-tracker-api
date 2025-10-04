@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getUserProfile, updatePreferences } from '../controllers/authController';
+import { register, login, getUserProfile, updatePreferences, logout, refreshAccessToken } from '../controllers/authController';
 import { protect } from '../middlewares/authMiddleware';
 import validate from '../middlewares/validateMiddleware';
 import { loginSchema, registerSchema, updatePreferencesSchema } from '../validations/authValidation';
@@ -10,6 +10,8 @@ const router = Router();
 router.get('/profile', protect, getUserProfile);
 router.post('/register', registerRateLimiter, validate(registerSchema), register);
 router.post('/login', loginRateLimiter, validate(loginSchema), login);
+router.post('/logout', protect, logout);
+router.post('/refresh', refreshAccessToken);
 router.put('/preferences', protect, validate(updatePreferencesSchema), updatePreferences);
 
 export default router;

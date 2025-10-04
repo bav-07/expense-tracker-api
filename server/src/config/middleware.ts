@@ -3,8 +3,11 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import { rateLimiter } from '../middlewares/rateLimiter';
 import requestLogger from '../middlewares/logger';
+import { httpsEnforcement, additionalSecurityHeaders } from '../middlewares/securityHeaders';
+import { inputSanitization } from '../middlewares/inputSanitization';
 
 export default (app: Application) => {
 
@@ -45,6 +48,10 @@ export default (app: Application) => {
         credentials: true,
     };
 
+    // Security middleware
+    app.use(httpsEnforcement);
+    app.use(compression());
+    
     app.use(helmet(
         {
             frameguard: { action: 'deny' },
@@ -52,9 +59,17 @@ export default (app: Application) => {
             crossOriginEmbedderPolicy: false,
         },
     ));
+    
+    app.use(additionalSecurityHeaders);
     app.use(cors(corsOptions));
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
+    
+    // Request size limits for security
+    app.use(express.json({ limit: '10mb' }));
+    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+    
+    // Input sanitization
+    app.use(inputSanitization);
+    
     app.use(cookieParser());
     app.use(morgan('dev'));
     app.use(rateLimiter);

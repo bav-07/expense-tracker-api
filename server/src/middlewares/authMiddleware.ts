@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import { Response, NextFunction } from 'express';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
+import JWTSecurityManager from '../utils/jwtSecurity';
+import { tokenBlacklist } from '../utils/tokenManager';
 
 interface DecodedToken {
   id: string;
@@ -18,8 +20,15 @@ export const protect = async (req: IGetUserAuthInfoRequest, res: Response, next:
       return;
     }
 
+    // Check if token is blacklisted
+    if (tokenBlacklist.isTokenBlacklisted(token)) {
+      res.status(401).json({ error: 'Token has been revoked' });
+      return;
+    }
+
     // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as DecodedToken;
+    const jwtConfig = JWTSecurityManager.getJWTConfig();
+    const decoded = jwt.verify(token, jwtConfig.secret) as DecodedToken;
     const user = await User.findById(decoded.id).select('-password'); 
     if (!user) {
       res.status(401).json({ error: 'User not found' });

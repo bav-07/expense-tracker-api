@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
 import { AppError } from '../middlewares/errorHandler';
 import catchAsync from '../utils/catchAsync';
+import JWTSecurityManager from '../utils/jwtSecurity';
+import { tokenBlacklist, refreshTokenManager } from '../utils/tokenManager';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -12,10 +15,16 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: "strict" as const,
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
 }
 
 const generateToken = (userId: string): string => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+  const jwtConfig = JWTSecurityManager.getJWTConfig();
+  return jwt.sign({ id: userId }, jwtConfig.secret, { expiresIn: '1h' });
+};
+
+const generateRefreshToken = (): string => {
+  return crypto.randomBytes(32).toString('hex');
 };
 
 export const register = catchAsync(async (req: Request, res: Response): Promise<void> => {
@@ -34,8 +43,23 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   await user.save();
 
   const token = generateToken(user.id);
+  const refreshToken = generateRefreshToken();
+  
+  // Store refresh token (expires in 7 days)
+  const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
+  
   res.cookie('token', token, cookieOptions);
-  res.status(201).json({ token, user: { id: user.id, name, email } });
+  res.cookie('refreshToken', refreshToken, { 
+    ...cookieOptions, 
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days 
+  });
+  
+  res.status(201).json({ 
+    token, 
+    refreshToken,
+    user: { id: user.id, name, email } 
+  });
 });
 
 export const login = catchAsync(async (req: Request, res: Response): Promise<void> => {
@@ -76,7 +100,23 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
   await user.resetLoginAttempts();
   
   const token = generateToken(user.id);
-  res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+  const refreshToken = generateRefreshToken();
+  
+  // Store refresh token (expires in 7 days)
+  const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
+  
+  res.cookie('token', token, cookieOptions);
+  res.cookie('refreshToken', refreshToken, { 
+    ...cookieOptions, 
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days 
+  });
+  
+  res.status(200).json({ 
+    token, 
+    refreshToken,
+    user: { id: user.id, name: user.name, email: user.email } 
+  });
 });
 
 export const getUserProfile = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
@@ -91,4 +131,54 @@ export const updatePreferences = catchAsync(async (req: IGetUserAuthInfoRequest,
   const { weekStart, monthStart } = req.body;
   const user = await User.findByIdAndUpdate(req.user?.id, { weekStart, monthStart }, { new: true });
   res.status(200).json(user);
+});
+
+export const logout = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const token = req.headers.authorization?.split(' ')[1];
+  const refreshToken = req.cookies.refreshToken;
+  
+  if (token) {
+    // Blacklist the access token
+    const decoded = jwt.decode(token) as any;
+    if (decoded && decoded.exp) {
+      tokenBlacklist.blacklistToken(token, decoded.exp * 1000);
+    }
+  }
+  
+  if (refreshToken) {
+    // Revoke refresh token
+    refreshTokenManager.revokeRefreshToken(refreshToken);
+  }
+  
+  // Clear cookies
+  res.clearCookie('token');
+  res.clearCookie('refreshToken');
+  
+  res.status(200).json({ message: 'Logged out successfully' });
+});
+
+export const refreshAccessToken = catchAsync(async (req: Request, res: Response): Promise<void> => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    throw new AppError('Refresh token is required', 400);
+  }
+  
+  const userId = refreshTokenManager.validateRefreshToken(refreshToken);
+  if (!userId) {
+    throw new AppError('Invalid or expired refresh token', 401);
+  }
+  
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+  
+  // Generate new access token
+  const newToken = generateToken(user.id);
+  
+  res.status(200).json({ 
+    token: newToken,
+    user: { id: user.id, name: user.name, email: user.email }
+  });
 });

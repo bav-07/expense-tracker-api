@@ -8,9 +8,18 @@ import expenseRoutes from './routes/expense';
 import savingsRoutes from './routes/savings';
 import connectDB from './config/db';
 import { errorHandler } from './middlewares/errorHandler';
+import JWTSecurityManager from './utils/jwtSecurity';
 
 const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
 dotenv.config({ path: envFile });
+
+// Validate environment and security configuration on startup
+try {
+  JWTSecurityManager.validateEnvironment();
+} catch (error) {
+  console.error('Security Configuration Error:', error);
+  process.exit(1);
+}
 
 const app: Application = express();
 
