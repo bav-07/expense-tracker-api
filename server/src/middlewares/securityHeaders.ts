@@ -42,17 +42,25 @@ export const additionalSecurityHeaders = (req: Request, res: Response, next: Nex
 export const getCSPConfig = () => {
   const allowedOrigins = process.env.ALLOWED_ORIGIN?.split(',') || ['http://localhost:3000'];
   
+  // Build script-src based on environment
+  const scriptSrc = ["'self'"];
+  
+  if (process.env.NODE_ENV === 'production') {
+    // Production: No unsafe-inline, only allow self and specific trusted sources
+    // For any inline scripts in production, they should be moved to external files
+    // or use nonces/hashes on a per-request basis
+  } else {
+    // Development: Allow unsafe-inline for hot reload and development tools
+    scriptSrc.push("'unsafe-inline'");
+  }
+
   return {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: [
-        "'self'",
-        "'unsafe-inline'", // Only for development - remove in production
-        ...(process.env.NODE_ENV === 'development' ? [] : [])
-      ],
+      scriptSrc,
       styleSrc: [
         "'self'",
-        "'unsafe-inline'", // Required for some CSS frameworks
+        "'unsafe-inline'", // CSS requires this for many frameworks
         'https://fonts.googleapis.com'
       ],
       fontSrc: [

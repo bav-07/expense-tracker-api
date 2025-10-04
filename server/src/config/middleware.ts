@@ -53,6 +53,7 @@ export default (app: Application) => {
     app.use(httpsEnforcement);
     app.use(compression());
     
+    // Apply CSP with environment-specific configuration
     app.use(helmet(
         {
             frameguard: { action: 'deny' },
