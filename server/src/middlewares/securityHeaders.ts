@@ -26,17 +26,6 @@ export const additionalSecurityHeaders = (req: Request, res: Response, next: Nex
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   }
   
-  // Content Security Policy
-  res.setHeader('Content-Security-Policy', 
-    "default-src 'self'; " +
-    "script-src 'self'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "font-src 'self'; " +
-    "connect-src 'self'; " +
-    "frame-ancestors 'none';"
-  );
-  
   // Additional security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -45,4 +34,56 @@ export const additionalSecurityHeaders = (req: Request, res: Response, next: Nex
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   
   next();
+};
+
+/**
+ * Configure strict Content Security Policy
+ */
+export const getCSPConfig = () => {
+  const allowedOrigins = process.env.ALLOWED_ORIGIN?.split(',') || ['http://localhost:3000'];
+  
+  return {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'", // Only for development - remove in production
+        ...(process.env.NODE_ENV === 'development' ? [] : [])
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'", // Required for some CSS frameworks
+        'https://fonts.googleapis.com'
+      ],
+      fontSrc: [
+        "'self'",
+        'https://fonts.gstatic.com',
+        'data:'
+      ],
+      imgSrc: [
+        "'self'",
+        'data:',
+        'https:',
+        'blob:'
+      ],
+      connectSrc: [
+        "'self'",
+        ...allowedOrigins,
+        ...(process.env.NODE_ENV === 'development' ? ['ws:', 'wss:'] : [])
+      ],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      manifestSrc: ["'self'"],
+      workerSrc: ["'self'"],
+      childSrc: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    },
+    reportOnly: process.env.NODE_ENV === 'development',
+    // Enable CSP violation reporting
+    reportUri: '/api/csp-report'
+  };
 };

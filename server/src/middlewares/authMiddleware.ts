@@ -3,7 +3,7 @@ import User from '../models/userModel';
 import { Response, NextFunction } from 'express';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
 import JWTSecurityManager from '../utils/jwtSecurity';
-import { tokenBlacklist } from '../utils/tokenManager';
+import { redisTokenManager } from '../utils/redisTokenManager';
 
 interface DecodedToken {
   id: string;
@@ -21,7 +21,8 @@ export const protect = async (req: IGetUserAuthInfoRequest, res: Response, next:
     }
 
     // Check if token is blacklisted
-    if (tokenBlacklist.isTokenBlacklisted(token)) {
+    const isBlacklisted = await redisTokenManager.isTokenBlacklisted(token);
+    if (isBlacklisted) {
       res.status(401).json({ error: 'Token has been revoked' });
       return;
     }

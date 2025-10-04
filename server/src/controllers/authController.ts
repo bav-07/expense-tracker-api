@@ -6,7 +6,7 @@ import { IGetUserAuthInfoRequest } from '../config/definitions';
 import { AppError } from '../middlewares/errorHandler';
 import catchAsync from '../utils/catchAsync';
 import JWTSecurityManager from '../utils/jwtSecurity';
-import { tokenBlacklist, refreshTokenManager } from '../utils/tokenManager';
+import { redisTokenManager } from '../utils/redisTokenManager';
 import crypto from 'crypto';
 
 dotenv.config();
@@ -47,7 +47,7 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   
   // Store refresh token (expires in 7 days)
   const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
-  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
+  await redisTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
   
   res.cookie('token', token, cookieOptions);
   res.cookie('refreshToken', refreshToken, { 
@@ -104,7 +104,7 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
   
   // Store refresh token (expires in 7 days)
   const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
-  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
+  await redisTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
   
   res.cookie('token', token, cookieOptions);
   res.cookie('refreshToken', refreshToken, { 
@@ -139,15 +139,15 @@ export const logout = catchAsync(async (req: IGetUserAuthInfoRequest, res: Respo
   
   if (token) {
     // Blacklist the access token
-    const decoded = jwt.decode(token) as any;
+    const decoded = jwt.decode(token) as { exp?: number };
     if (decoded && decoded.exp) {
-      tokenBlacklist.blacklistToken(token, decoded.exp * 1000);
+      await redisTokenManager.blacklistToken(token, decoded.exp * 1000);
     }
   }
   
   if (refreshToken) {
     // Revoke refresh token
-    refreshTokenManager.revokeRefreshToken(refreshToken);
+    await redisTokenManager.revokeRefreshToken(refreshToken);
   }
   
   // Clear cookies
@@ -164,7 +164,7 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
     throw new AppError('Refresh token is required', 400);
   }
   
-  const userId = refreshTokenManager.validateRefreshToken(refreshToken);
+  const userId = await redisTokenManager.validateRefreshToken(refreshToken);
   if (!userId) {
     throw new AppError('Invalid or expired refresh token', 401);
   }
@@ -174,11 +174,20 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
     throw new AppError('User not found', 404);
   }
   
-  // Generate new access token
+  // Revoke the old refresh token (rotation)
+  await redisTokenManager.revokeRefreshToken(refreshToken);
+  
+  // Generate new tokens
   const newToken = generateToken(user.id);
+  const newRefreshToken = generateRefreshToken();
+  
+  // Store new refresh token (expires in 7 days)
+  const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+  await redisTokenManager.storeRefreshToken(newRefreshToken, user.id, refreshExpiry);
   
   res.status(200).json({ 
     token: newToken,
+    refreshToken: newRefreshToken,
     user: { id: user.id, name: user.name, email: user.email }
   });
 });

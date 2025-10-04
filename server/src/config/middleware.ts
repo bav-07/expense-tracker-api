@@ -6,8 +6,9 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { rateLimiter } from '../middlewares/rateLimiter';
 import requestLogger from '../middlewares/logger';
-import { httpsEnforcement, additionalSecurityHeaders } from '../middlewares/securityHeaders';
+import { httpsEnforcement, additionalSecurityHeaders, getCSPConfig } from '../middlewares/securityHeaders';
 import { inputSanitization } from '../middlewares/inputSanitization';
+import { secureCookies, csrfToken } from '../middlewares/csrfProtection';
 
 export default (app: Application) => {
 
@@ -55,7 +56,7 @@ export default (app: Application) => {
     app.use(helmet(
         {
             frameguard: { action: 'deny' },
-            contentSecurityPolicy: false,
+            contentSecurityPolicy: getCSPConfig(),
             crossOriginEmbedderPolicy: false,
         },
     ));
@@ -71,6 +72,8 @@ export default (app: Application) => {
     app.use(inputSanitization);
     
     app.use(cookieParser());
+    app.use(secureCookies);
+    app.use(csrfToken);
     app.use(morgan('dev'));
     app.use(rateLimiter);
     app.use(requestLogger);
