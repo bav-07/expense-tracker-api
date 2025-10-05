@@ -4,7 +4,9 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  const url = `http://localhost:4000${path.startsWith('/api') ? path : `/api${path}`}`;
+  // Use environment variable for API URL, fallback to localhost for development
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const url = `${apiUrl}${path.startsWith('/api') ? path : `/api${path}`}`;
   const res = await fetch(url, { ...init, headers });
   if (!res.ok) {
     let msg = `Request failed: ${res.status}`;
