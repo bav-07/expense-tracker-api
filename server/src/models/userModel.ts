@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
-import bcrypt from 'bcrypt';
+import { PasswordService } from '../utils/passwordService';
 
 // Define an interface for the User model
 export interface IUser extends Document {
@@ -35,13 +35,23 @@ userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next();
   }
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await PasswordService.hashPassword(this.password);
   next();
 });
 
-// Add a method to validate passwords
+// Add a method to validate passwords with migration support
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
+  // Use migration method to handle both bcrypt and Argon2 hashes
+  const result = await PasswordService.migratePassword(candidatePassword, this.password);
+  
+  // If password is valid and we got a new hash (migration needed), update it
+  if (result.isValid && result.newHash) {
+    this.password = result.newHash;
+    // Save the updated hash (only the password field will be updated)
+    await this.save();
+  }
+  
+  return result.isValid;
 }
 
 // Virtual for checking if account is locked

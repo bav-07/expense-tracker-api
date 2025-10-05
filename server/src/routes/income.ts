@@ -6,6 +6,7 @@ import { incomeSchema, updateIncomeSchema } from '../validations/incomeValidatio
 import { validateObjectId } from '../validations/validateParams';
 import { validateQuery } from '../validations/validateQuery';
 import { dateRangeSchema } from '../validations/validationSchemas';
+import { csrfProtect } from '../middlewares/csrfProtection';
 
 const router = Router();
 
@@ -14,8 +15,8 @@ router.use(protect);
 router.get('/', getIncomes);
 router.get('/period', validateQuery(dateRangeSchema), getIncomeByPeriod);
 router.get('/:id', validateObjectId, getIncomeById);
-router.post('/', validate(incomeSchema), createIncome);
-router.put('/:id', validateObjectId, validate(updateIncomeSchema), updateIncome);
-router.delete('/:id', validateObjectId, deleteIncome);
+router.post('/', csrfProtect, validate(incomeSchema), createIncome);
+router.put('/:id', csrfProtect, validateObjectId, validate(updateIncomeSchema), updateIncome);
+router.delete('/:id', csrfProtect, validateObjectId, deleteIncome);
 
 export default router;

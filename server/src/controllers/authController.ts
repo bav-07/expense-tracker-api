@@ -1,13 +1,12 @@
 import { Request, Response} from 'express';
-import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import dotenv from 'dotenv';
+import crypto from 'crypto';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
 import { AppError } from '../middlewares/errorHandler';
 import catchAsync from '../utils/catchAsync';
-import JWTSecurityManager from '../utils/jwtSecurity';
-import { tokenBlacklist, refreshTokenManager } from '../utils/tokenManager';
-import crypto from 'crypto';
+import { TokenBindingService } from '../utils/tokenBindingService';
+import { redisTokenManager } from '../utils/redisTokenManager';
 
 dotenv.config();
 
@@ -17,15 +16,6 @@ const cookieOptions = {
   sameSite: "strict" as const,
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
 }
-
-const generateToken = (userId: string): string => {
-  const jwtConfig = JWTSecurityManager.getJWTConfig();
-  return jwt.sign({ id: userId }, jwtConfig.secret, { expiresIn: '1h' });
-};
-
-const generateRefreshToken = (): string => {
-  return crypto.randomBytes(32).toString('hex');
-};
 
 export const register = catchAsync(async (req: Request, res: Response): Promise<void> => {
   const { name, email, password } = req.body;
@@ -42,12 +32,12 @@ export const register = catchAsync(async (req: Request, res: Response): Promise<
   const user = new User({ name, email, password });
   await user.save();
 
-  const token = generateToken(user.id);
-  const refreshToken = generateRefreshToken();
+  const { token, jti: accessJti } = await TokenBindingService.createBoundAccessToken(user.id, req);
+  const { token: refreshToken, jti: refreshJti } = await TokenBindingService.createBoundRefreshToken(user.id, req);
   
-  // Store refresh token (expires in 7 days)
-  const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
-  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
+  // Add tokens to user registry for management
+  await TokenBindingService.addTokenToUserRegistry(user.id, accessJti);
+  await TokenBindingService.addTokenToUserRegistry(user.id, refreshJti);
   
   res.cookie('token', token, cookieOptions);
   res.cookie('refreshToken', refreshToken, { 
@@ -83,6 +73,7 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
 
   // Check password
   const isValidPassword = await user.comparePassword(password);
+  
   if (!isValidPassword) {
     // Increment failed attempts and potentially lock account
     await user.incLoginAttempts();
@@ -99,24 +90,30 @@ export const login = catchAsync(async (req: Request, res: Response): Promise<voi
   // Successful login - reset login attempts
   await user.resetLoginAttempts();
   
-  const token = generateToken(user.id);
-  const refreshToken = generateRefreshToken();
-  
-  // Store refresh token (expires in 7 days)
-  const refreshExpiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
-  refreshTokenManager.storeRefreshToken(refreshToken, user.id, refreshExpiry);
-  
-  res.cookie('token', token, cookieOptions);
-  res.cookie('refreshToken', refreshToken, { 
-    ...cookieOptions, 
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days 
-  });
-  
-  res.status(200).json({ 
-    token, 
-    refreshToken,
-    user: { id: user.id, name: user.name, email: user.email } 
-  });
+  try {
+    const { token, jti: accessJti } = await TokenBindingService.createBoundAccessToken(user.id, req);
+    const { token: refreshToken, jti: refreshJti } = await TokenBindingService.createBoundRefreshToken(user.id, req);
+    
+    // Add tokens to user registry for management
+    await TokenBindingService.addTokenToUserRegistry(user.id, accessJti);
+    await TokenBindingService.addTokenToUserRegistry(user.id, refreshJti);
+    
+    res.cookie('token', token, cookieOptions);
+    res.cookie('refreshToken', refreshToken, { 
+      ...cookieOptions, 
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days 
+    });
+    
+    res.status(200).json({ 
+      token, 
+      refreshToken,
+      user: { id: user.id, name: user.name, email: user.email } 
+    });
+  } catch (tokenError) {
+    // If token creation fails, still increment login attempts to prevent abuse
+    await user.incLoginAttempts();
+    throw new AppError('Authentication system temporarily unavailable', 500);
+  }
 });
 
 export const getUserProfile = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
@@ -138,16 +135,18 @@ export const logout = catchAsync(async (req: IGetUserAuthInfoRequest, res: Respo
   const refreshToken = req.cookies.refreshToken;
   
   if (token) {
-    // Blacklist the access token
-    const decoded = jwt.decode(token) as any;
-    if (decoded && decoded.exp) {
-      tokenBlacklist.blacklistToken(token, decoded.exp * 1000);
+    // Validate and revoke bound token
+    const validation = await TokenBindingService.validateBoundToken(token, req);
+    if (validation.isValid && validation.payload?.jti) {
+      await TokenBindingService.revokeTokenBinding(validation.payload.jti);
     }
+    // Also blacklist the token as backup
+    await redisTokenManager.blacklistToken(token, Date.now() + (60 * 60 * 1000));
   }
   
   if (refreshToken) {
     // Revoke refresh token
-    refreshTokenManager.revokeRefreshToken(refreshToken);
+    await redisTokenManager.revokeRefreshToken(refreshToken);
   }
   
   // Clear cookies
@@ -164,7 +163,7 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
     throw new AppError('Refresh token is required', 400);
   }
   
-  const userId = refreshTokenManager.validateRefreshToken(refreshToken);
+  const userId = await redisTokenManager.validateRefreshToken(refreshToken);
   if (!userId) {
     throw new AppError('Invalid or expired refresh token', 401);
   }
@@ -174,11 +173,79 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
     throw new AppError('User not found', 404);
   }
   
-  // Generate new access token
-  const newToken = generateToken(user.id);
+  // Revoke the old refresh token (rotation)
+  await redisTokenManager.revokeRefreshToken(refreshToken);
+  
+  // Generate new bound tokens
+  const { token: newToken, jti: newAccessJti } = await TokenBindingService.createBoundAccessToken(user.id, req);
+  const { token: newRefreshToken, jti: newRefreshJti } = await TokenBindingService.createBoundRefreshToken(user.id, req);
+  
+  // Add new tokens to user registry
+  await TokenBindingService.addTokenToUserRegistry(user.id, newAccessJti);
+  await TokenBindingService.addTokenToUserRegistry(user.id, newRefreshJti);
   
   res.status(200).json({ 
     token: newToken,
+    refreshToken: newRefreshToken,
     user: { id: user.id, name: user.name, email: user.email }
   });
 });
+
+export const getSecurityInfo = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new AppError('User not authenticated', 401);
+  }
+
+  const securityInfo = await TokenBindingService.getClientSecurityInfo(userId);
+  
+  res.status(200).json({
+    userId,
+    activeTokens: securityInfo.activeTokens,
+    recentDevices: securityInfo.recentFingerprints.map(fp => ({
+      ip: fp.ip,
+      userAgent: fp.userAgent,
+      lastSeen: new Date(fp.lastSeen).toISOString(),
+      isCurrentDevice: TokenBindingService.createClientFingerprint(req).fingerprintHash === 
+        crypto.createHash('sha256').update(`${fp.ip}:${fp.userAgent}`).digest('hex')
+    }))
+  });
+});
+
+export const revokeAllTokens = catchAsync(async (req: IGetUserAuthInfoRequest, res: Response): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new AppError('User not authenticated', 401);
+  }
+
+  // Revoke all tokens except the current one
+  const currentToken = req.headers.authorization?.split(' ')[1];
+  if (currentToken) {
+    const validation = await TokenBindingService.validateBoundToken(currentToken, req);
+    if (validation.isValid && validation.payload?.jti) {
+      // Save current token's JTI to exclude from revocation
+      await TokenBindingService.revokeAllUserTokens(userId);
+      
+      // Re-create the current session token
+      const { token: newToken, jti: newJti } = await TokenBindingService.createBoundAccessToken(userId, req);
+      await TokenBindingService.addTokenToUserRegistry(userId, newJti);
+      
+      res.status(200).json({
+        message: 'All other sessions have been terminated',
+        newToken
+      });
+      return;
+    }
+  }
+  
+  // If no valid current token, revoke everything
+  await TokenBindingService.revokeAllUserTokens(userId);
+  res.status(200).json({
+    message: 'All sessions have been terminated. Please log in again.'
+  });
+});
+
+
+
+
+

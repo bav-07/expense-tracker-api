@@ -4,10 +4,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import hpp from 'hpp';
 import { rateLimiter } from '../middlewares/rateLimiter';
 import requestLogger from '../middlewares/logger';
-import { httpsEnforcement, additionalSecurityHeaders } from '../middlewares/securityHeaders';
+import { httpsEnforcement, additionalSecurityHeaders, getCSPConfig } from '../middlewares/securityHeaders';
 import { inputSanitization } from '../middlewares/inputSanitization';
+import { secureCookies, csrfToken } from '../middlewares/csrfProtection';
 
 export default (app: Application) => {
 
@@ -44,7 +46,7 @@ export default (app: Application) => {
             }
         },
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
         credentials: true,
     };
 
@@ -52,10 +54,11 @@ export default (app: Application) => {
     app.use(httpsEnforcement);
     app.use(compression());
     
+    // Apply CSP with environment-specific configuration
     app.use(helmet(
         {
             frameguard: { action: 'deny' },
-            contentSecurityPolicy: false,
+            contentSecurityPolicy: getCSPConfig(),
             crossOriginEmbedderPolicy: false,
         },
     ));
@@ -67,10 +70,17 @@ export default (app: Application) => {
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     
+    // HTTP Parameter Pollution protection
+    app.use(hpp({
+        whitelist: ['tags', 'sort', 'fields'] // Allow these parameters to be arrays
+    }));
+    
     // Input sanitization
     app.use(inputSanitization);
     
     app.use(cookieParser());
+    app.use(secureCookies);
+    app.use(csrfToken);
     app.use(morgan('dev'));
     app.use(rateLimiter);
     app.use(requestLogger);

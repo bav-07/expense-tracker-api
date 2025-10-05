@@ -26,17 +26,6 @@ export const additionalSecurityHeaders = (req: Request, res: Response, next: Nex
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   }
   
-  // Content Security Policy
-  res.setHeader('Content-Security-Policy', 
-    "default-src 'self'; " +
-    "script-src 'self'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "font-src 'self'; " +
-    "connect-src 'self'; " +
-    "frame-ancestors 'none';"
-  );
-  
   // Additional security headers
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -45,4 +34,64 @@ export const additionalSecurityHeaders = (req: Request, res: Response, next: Nex
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   
   next();
+};
+
+/**
+ * Configure strict Content Security Policy
+ */
+export const getCSPConfig = () => {
+  const allowedOrigins = process.env.ALLOWED_ORIGIN?.split(',') || ['http://localhost:3000'];
+  
+  // Build script-src based on environment
+  const scriptSrc = ["'self'"];
+  
+  if (process.env.NODE_ENV === 'production') {
+    // Production: No unsafe-inline, only allow self and specific trusted sources
+    // For any inline scripts in production, they should be moved to external files
+    // or use nonces/hashes on a per-request basis
+  } else {
+    // Development: Allow unsafe-inline for hot reload and development tools
+    scriptSrc.push("'unsafe-inline'");
+  }
+
+  return {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc,
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'", // CSS requires this for many frameworks
+        'https://fonts.googleapis.com'
+      ],
+      fontSrc: [
+        "'self'",
+        'https://fonts.gstatic.com',
+        'data:'
+      ],
+      imgSrc: [
+        "'self'",
+        'data:',
+        'https:',
+        'blob:'
+      ],
+      connectSrc: [
+        "'self'",
+        ...allowedOrigins,
+        ...(process.env.NODE_ENV === 'development' ? ['ws:', 'wss:'] : [])
+      ],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      manifestSrc: ["'self'"],
+      workerSrc: ["'self'"],
+      childSrc: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'self'"],
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
+    },
+    reportOnly: process.env.NODE_ENV === 'development',
+    // Enable CSP violation reporting
+    reportUri: '/api/csp-report'
+  };
 };

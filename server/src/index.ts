@@ -6,6 +6,7 @@ import healthRoutes from './routes/health';
 import incomeRoutes from './routes/income';
 import expenseRoutes from './routes/expense';
 import savingsRoutes from './routes/savings';
+import securityRoutes from './routes/security';
 import connectDB from './config/db';
 import { errorHandler } from './middlewares/errorHandler';
 import JWTSecurityManager from './utils/jwtSecurity';
@@ -30,6 +31,7 @@ configureMiddleware(app)
 
 // Routes
 app.use('/api', healthRoutes);
+app.use('/api', securityRoutes);
 app.use('/api/users', authRoutes);
 app.use('/api/income', incomeRoutes);
 app.use('/api/expense', expenseRoutes);
