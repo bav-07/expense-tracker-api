@@ -23,9 +23,14 @@ class CSRFProtection {
    */
   generateToken(secret?: string): { token: string; secret: string } {
     const tokenSecret = secret || crypto.randomBytes(this.secretLength).toString('hex');
-    const token = crypto.createHmac('sha256', tokenSecret)
-      .update(`csrf-${Date.now()}`)
+    const timestamp = Date.now();
+    
+    // Create token with embedded timestamp: timestamp.hmac
+    const hmac = crypto.createHmac('sha256', tokenSecret)
+      .update(`csrf-${timestamp}`)
       .digest('hex');
+    
+    const token = `${timestamp}.${hmac}`;
     
     return { token, secret: tokenSecret };
   }
@@ -37,21 +42,34 @@ class CSRFProtection {
     if (!token || !secret) return false;
     
     try {
-      // Extract timestamp from token (basic replay protection)
-      const expectedHash = crypto.createHmac('sha256', secret)
-        .update(`csrf-${Date.now()}`)
+      // Parse token format: timestamp.hmac
+      const parts = token.split('.');
+      if (parts.length !== 2) return false;
+      
+      const [timestampStr, providedHmac] = parts;
+      const timestamp = parseInt(timestampStr, 10);
+      
+      if (isNaN(timestamp)) return false;
+      
+      // Check token age (reject tokens older than 24 hours)
+      const tokenAge = Date.now() - timestamp;
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      if (tokenAge > maxAge) return false;
+      
+      // Recalculate HMAC using the embedded timestamp
+      const expectedHmac = crypto.createHmac('sha256', secret)
+        .update(`csrf-${timestamp}`)
         .digest('hex');
       
       // Use crypto.timingSafeEqual for timing attack protection
-      const tokenBuffer = Buffer.from(token, 'hex');
-      const expectedBuffer = Buffer.from(expectedHash, 'hex');
+      const providedBuffer = Buffer.from(providedHmac, 'hex');
+      const expectedBuffer = Buffer.from(expectedHmac, 'hex');
       
-      if (tokenBuffer.length !== expectedBuffer.length) {
+      if (providedBuffer.length !== expectedBuffer.length) {
         return false;
       }
       
-      // For CSRF, we're more lenient with timing as tokens are shorter-lived
-      return crypto.timingSafeEqual(tokenBuffer, expectedBuffer);
+      return crypto.timingSafeEqual(providedBuffer, expectedBuffer);
     } catch (error) {
       return false;
     }
