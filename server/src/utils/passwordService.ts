@@ -27,17 +27,21 @@ export class PasswordService {
   }
 
   /**
-   * Verify a password against its Argon2id hash
-   * @param hash - Stored Argon2id hash
-   * @param password - Plain text password to verify
+   * Verify a password against an Argon2id hash
+   * @param hash - The Argon2id hash to verify against
+   * @param password - The plain text password
    * @returns Promise<boolean> - True if password matches
    */
   static async verifyPassword(hash: string, password: string): Promise<boolean> {
     try {
-      return await argon2.verify(hash, password);
+      const result = await argon2.verify(hash, password);
+      return result;
     } catch (error) {
-      // Log verification errors but don't expose details
       console.error('Password verification error:', error);
+      if (error instanceof Error) {
+        console.error('Error type:', error.constructor.name);
+        console.error('Error message:', error.message);
+      }
       return false;
     }
   }

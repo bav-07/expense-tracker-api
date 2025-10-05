@@ -271,6 +271,78 @@ class RedisTokenManager {
       this.fallbackStorage.clear();
     }
   }
+
+  /**
+   * Generic set method for key-value storage with TTL
+   */
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    try {
+      if (!this.fallbackEnabled && this.redis) {
+        await this.redis.setex(key, ttlSeconds, value);
+      } else {
+        // Fallback storage
+        const expiresAt = Date.now() + (ttlSeconds * 1000);
+        this.fallbackStorage.set(key, { value, expiresAt });
+        this.cleanupExpiredFallback();
+      }
+    } catch (error) {
+      console.error('Error setting key-value pair:', error);
+      // Fallback to memory storage
+      const expiresAt = Date.now() + (ttlSeconds * 1000);
+      this.fallbackStorage.set(key, { value, expiresAt });
+    }
+  }
+
+  /**
+   * Generic get method for key-value retrieval
+   */
+  async get(key: string): Promise<string | null> {
+    try {
+      if (!this.fallbackEnabled && this.redis) {
+        return await this.redis.get(key);
+      } else {
+        // Fallback storage
+        const entry = this.fallbackStorage.get(key);
+        if (!entry) {
+          return null;
+        }
+        
+        if (Date.now() > entry.expiresAt) {
+          this.fallbackStorage.delete(key);
+          return null;
+        }
+        
+        return entry.value;
+      }
+    } catch (error) {
+      console.error('Error getting key-value pair:', error);
+      // Try fallback storage
+      const entry = this.fallbackStorage.get(key);
+      if (entry && Date.now() <= entry.expiresAt) {
+        return entry.value;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Generic delete method for key removal
+   */
+  async delete(key: string): Promise<void> {
+    try {
+      if (!this.fallbackEnabled && this.redis) {
+        await this.redis.del(key);
+      } else {
+        this.fallbackStorage.delete(key);
+      }
+    } catch (error) {
+      console.error('Error deleting key:', error);
+      // Always try fallback storage
+      this.fallbackStorage.delete(key);
+    }
+  }
+
+
 }
 
 // Singleton instance

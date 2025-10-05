@@ -1,15 +1,8 @@
-import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import { Response, NextFunction } from 'express';
 import { IGetUserAuthInfoRequest } from '../config/definitions';
-import JWTSecurityManager from '../utils/jwtSecurity';
+import { TokenBindingService } from '../utils/tokenBindingService';
 import { redisTokenManager } from '../utils/redisTokenManager';
-
-interface DecodedToken {
-  id: string;
-  iat: number;
-  exp: number;
-}
 
 export const protect = async (req: IGetUserAuthInfoRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -20,21 +13,30 @@ export const protect = async (req: IGetUserAuthInfoRequest, res: Response, next:
       return;
     }
 
-    // Check if token is blacklisted
+    // Check if token is blacklisted (legacy support)
     const isBlacklisted = await redisTokenManager.isTokenBlacklisted(token);
     if (isBlacklisted) {
       res.status(401).json({ error: 'Token has been revoked' });
       return;
     }
 
-    // Verify the token
-    const jwtConfig = JWTSecurityManager.getJWTConfig();
-    const decoded = jwt.verify(token, jwtConfig.secret) as DecodedToken;
-    const user = await User.findById(decoded.id).select('-password'); 
+    // Validate bound token with client fingerprint
+    const validation = await TokenBindingService.validateBoundToken(token, req);
+    if (!validation.isValid) {
+      res.status(401).json({ 
+        error: 'Token validation failed',
+        reason: validation.reason 
+      });
+      return;
+    }
+
+    // Get user from validated token
+    const user = await User.findById(validation.payload!.id).select('-password'); 
     if (!user) {
       res.status(401).json({ error: 'User not found' });
       return;
     }
+    
     req.user = user;
     next();
   } catch (err) {
