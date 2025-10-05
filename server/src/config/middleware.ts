@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import hpp from 'hpp';
 import { rateLimiter } from '../middlewares/rateLimiter';
 import requestLogger from '../middlewares/logger';
 import { httpsEnforcement, additionalSecurityHeaders, getCSPConfig } from '../middlewares/securityHeaders';
@@ -68,6 +69,11 @@ export default (app: Application) => {
     // Request size limits for security
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+    
+    // HTTP Parameter Pollution protection
+    app.use(hpp({
+        whitelist: ['tags', 'sort', 'fields'] // Allow these parameters to be arrays
+    }));
     
     // Input sanitization
     app.use(inputSanitization);

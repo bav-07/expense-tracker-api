@@ -3,7 +3,7 @@ import { createLogger, format, transports } from 'winston';
 const isTestEnv = process.env.NODE_ENV === 'test';
 
 const logger = createLogger({
-  level: isTestEnv ? 'silent' : 'error', // Log only errors
+  level: isTestEnv ? 'silent' : 'warn', // Log warnings and errors for monitoring
   format: format.combine(
     format.timestamp(),
     format.json()
@@ -11,8 +11,9 @@ const logger = createLogger({
   transports: isTestEnv 
     ? [new transports.Console({ silent: true })] 
     : [
-      new transports.File({ filename: 'logs/error.log' }), // Save errors to a file
-      new transports.Console({ level: 'error' }) // Also log errors to the console
+      new transports.File({ filename: 'logs/error.log', level: 'error' }), // Errors to error.log
+      new transports.File({ filename: 'logs/access.log', level: 'warn' }), // Warnings and errors to access.log
+      new transports.Console({ level: 'warn' }) // Warnings and errors to console
     ],
 });
 
