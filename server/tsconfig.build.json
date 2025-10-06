@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node"]         // ← no jest
-  },
-  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/__tests__/**"]
-}
