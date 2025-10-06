@@ -6,9 +6,9 @@
   "scripts": {
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "dev": "cross-env NODE_ENV=development npx nodemon --watch src --exec npx ts-node src/index.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "lint": "npx eslint . --ignore-pattern 'dist/**'",
-    "test": "cross-env NODE_ENV=test jest --coverage --runInBand"
+    "test": "cross-env NODE_ENV=test jest --coverage --runInBand --passWithNoTests"
   },
   "repository": {
     "type": "git",
