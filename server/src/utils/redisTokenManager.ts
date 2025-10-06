@@ -1,6 +1,20 @@
 import Redis from 'ioredis';
 import crypto from 'crypto';
 
+interface RedisConfig {
+  host: string;
+  port: number;
+  password?: string;
+  lazyConnect: boolean;
+  connectTimeout: number;
+  commandTimeout: number;
+  maxRetriesPerRequest: number;
+  enableReadyCheck: boolean;
+  tls?: {
+    rejectUnauthorized: boolean;
+  };
+}
+
 class RedisTokenManager {
   private redis: Redis | null;
   private fallbackEnabled: boolean = true;
@@ -18,7 +32,7 @@ class RedisTokenManager {
   }
 
   private initializeRedis(): Redis {
-    const redis = new Redis({
+    const redisConfig: RedisConfig = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD,
@@ -27,7 +41,30 @@ class RedisTokenManager {
       commandTimeout: 3000,
       maxRetriesPerRequest: 1,
       enableReadyCheck: false,
-    });
+    };
+
+    // Enable TLS for production Redis Cloud instances
+    if (process.env.NODE_ENV === 'production' && process.env.REDIS_HOST?.includes('redis-cloud.com')) {
+      redisConfig.tls = {
+        // Don't reject unauthorized certificates for Redis Cloud
+        rejectUnauthorized: false,
+      };
+    }
+
+    // Support for Redis connection URL (alternative to individual settings)
+    if (process.env.REDIS_URL) {
+      return new Redis(process.env.REDIS_URL, {
+        lazyConnect: true,
+        connectTimeout: 5000,
+        commandTimeout: 3000,
+        maxRetriesPerRequest: 1,
+        enableReadyCheck: false,
+        // Enable TLS for Redis Cloud URLs
+        tls: process.env.REDIS_URL.includes('redis-cloud.com') ? { rejectUnauthorized: false } : undefined,
+      });
+    }
+
+    const redis = new Redis(redisConfig);
 
     redis.on('error', (err) => {
       console.error('Redis connection error:', err);
